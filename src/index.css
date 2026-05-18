@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans bg-cream text-textDark transition-colors duration-300 antialiased overflow-x-hidden;
+  }
+  
+  #root {
+    @apply w-full min-h-screen flex flex-col m-0 p-0 text-left border-none bg-transparent;
+    max-width: 100% !important;
+  }
+}
+
+/* Glassmorphism custom card styling */
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(139, 94, 60, 0.04);
+}
+
+.dark .glass-card {
+  background: rgba(30, 30, 30, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Custom premium styles */
+.glassmorphism-nav {
+  background: rgba(248, 245, 240, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(139, 94, 60, 0.08);
+}
+
+.dark .glassmorphism-nav {
+  background: rgba(18, 18, 18, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Swiper custom styles */
+.swiper-pagination-bullet {
+  background: #A4734D !important;
+  opacity: 0.4;
+}
+
+.swiper-pagination-bullet-active {
+  background: #556B2F !important;
+  opacity: 1;
+  width: 24px !important;
+  border-radius: 4px !important;
+  transition: all 0.3s ease;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F8F5F0;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1C1A17;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D4A373;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8B5E3C;
+}
+
+/* Float Animations */
+@keyframes float1 {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(3deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.animate-float-1 {
+  animation: float1 5s ease-in-out infinite;
+}
+
+@keyframes float2 {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(12px) rotate(-3deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.animate-float-2 {
+  animation: float2 6s ease-in-out infinite;
+}
+
+@keyframes float3 {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(-1.5deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.animate-float-3 {
+  animation: float3 5.5s ease-in-out infinite;
+}
+
+/* Shimmer Skeleton Loading Effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #F3EFE9 25%, #EBE5DB 37%, #F3EFE9 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+.dark .skeleton-shimmer {
+  background: linear-gradient(90deg, #2D2D2D 25%, #3A3A3A 37%, #2D2D2D 63%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
