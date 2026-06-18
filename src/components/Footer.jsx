@@ -34,7 +34,7 @@ export default function Footer({ setActiveView, setSelectedCategory, onAddToast 
         {/* Column 1: Brand Info */}
         <div className="md:col-span-4 space-y-4">
           <div className="flex items-center cursor-pointer" onClick={() => handleViewLink('home')}>
-            <img src="/logo.png" alt="Gym Millets" className="h-20 sm:h-24 w-auto object-contain hover:scale-105 transition-transform duration-300 rounded-full shadow-premium" />
+            <img src="/logo.png" alt="Gym Millets" className="h-28 sm:h-32 w-auto object-contain hover:scale-105 transition-transform duration-300 rounded-full shadow-premium" />
           </div>
           <p className="text-xs sm:text-sm text-cream/60 leading-relaxed font-semibold max-w-sm">
             Premium healthy millet premixes, powders, soups, and noodles. Handcrafted with traditional organic grain science to support your active lifestyle.
@@ -121,6 +121,11 @@ export default function Footer({ setActiveView, setSelectedCategory, onAddToast 
             <li>
               <button onClick={() => handleCategoryLink('Soups')} className="hover:text-cream transition-colors text-left hover:translate-x-1 transform duration-200">
                 Millet Soups
+              </button>
+            </li>
+            <li>
+              <button onClick={() => handleCategoryLink('Hot Meal')} className="hover:text-cream transition-colors text-left hover:translate-x-1 transform duration-200">
+                Hot Meals
               </button>
             </li>
           </ul>

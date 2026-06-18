@@ -48,18 +48,18 @@ export default function QuickViewModal({
         </button>
 
         {/* Left Side: Product Image & Badges */}
-        <div className="w-full md:w-1/2 relative bg-cream dark:bg-cream-dark/5 p-6 flex items-center justify-center md:border-r border-accent/10">
+        <div className="w-full md:w-1/2 relative bg-white dark:bg-darkCard p-6 flex items-center justify-center md:border-r border-accent/10">
           {product.badge && (
             <span className="absolute top-4 left-4 z-10 text-[10px] font-extrabold uppercase tracking-widest bg-highlight text-cream px-3.5 py-1.5 rounded-full shadow-premium">
               {product.badge}
             </span>
           )}
 
-          <div className="w-full max-w-[320px] aspect-square rounded-2xl overflow-hidden shadow-premium">
+          <div className="w-full max-w-[320px] aspect-square rounded-2xl overflow-hidden shadow-premium bg-white dark:bg-darkCard">
             <img
               src={product.image}
               alt={product.name}
-              className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-contain p-2 transform hover:scale-105 transition-transform duration-500"
             />
           </div>
         </div>

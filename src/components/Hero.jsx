@@ -1,8 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Flame, ShieldCheck, Zap } from 'lucide-react';
+
+const MILLETS = [
+  {
+    name: "",
+    image: "/millet-mix.png",
+    alt: "Organic Multi Millet Mix"
+  },
+  {
+    name: "Sorghum (Jowar)",
+    image: "/sorghum-jowar.png",
+    alt: "Sorghum Jowar"
+  },
+  {
+    name: "Pearl Millet",
+    image: "/pearl-millet.png",
+    alt: "Pearl Millet"
+  },
+  {
+    name: "Finger Millet",
+    image: "/finger-millet.png",
+    alt: "Finger Millet"
+  },
+  {
+    name: "Foxtail Millet",
+    image: "/foxtail-millet.png",
+    alt: "Foxtail Millet"
+  },
+  {
+    name: "Little Millet",
+    image: "/little-millet.png",
+    alt: "Little Millet"
+  }
+];
 
 export default function Hero({ setSearchQuery, setActiveView }) {
   const [localSearch, setLocalSearch] = useState('');
+  const [currentMilletIndex, setCurrentMilletIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentMilletIndex((prev) => (prev + 1) % MILLETS.length);
+    }, 2000);
+    return () => clearInterval(timer);
+  }, []);
+
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -34,7 +76,7 @@ export default function Hero({ setSearchQuery, setActiveView }) {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 bg-gradient-to-br from-cream via-[#F4EFE6] to-[#ECE5D9] dark:from-[#121212] dark:via-[#1A1A1A] dark:to-[#161412] px-4 sm:px-6 lg:px-8">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-36 sm:pt-40 lg:pt-44 bg-gradient-to-br from-cream via-[#F4EFE6] to-[#ECE5D9] dark:from-[#121212] dark:via-[#1A1A1A] dark:to-[#161412] px-4 sm:px-6 lg:px-8">
       {/* Decorative Organic Blobs */}
       <div className="absolute top-1/4 -left-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-accent/20 rounded-full blur-3xl pointer-events-none" />
@@ -51,16 +93,18 @@ export default function Hero({ setSearchQuery, setActiveView }) {
 
           {/* Heading */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-outfit font-extrabold text-textDark dark:text-cream leading-tight sm:leading-none">
-            Healthy Millet Foods <br className="hidden sm:inline" />
-            <span className="bg-gradient-to-r from-primary via-secondary to-highlight bg-clip-text text-transparent dark:from-success-light dark:via-accent-light dark:to-highlight-light">
-              Delivered Fresh
-            </span>
+            Healthy Millet Foods
           </h1>
 
           {/* Subheading */}
-          <p className="text-base sm:text-lg text-textLight dark:text-cream/70 max-w-xl mx-auto lg:mx-0 font-medium">
-            Discover premium millet premixes, powders, soups, noodles, and healthy products made for modern active living. Protein-rich, high-fiber, and delicious!
-          </p>
+          <div className="text-base sm:text-lg text-textLight dark:text-cream/70 max-w-xl mx-auto lg:mx-0 font-medium space-y-4">
+            <p>
+              Experience the power of ancient grains with our premium millet premixes and instant batters, crafted from millets soaked for 12 hours to unlock maximum protein and nutrition.
+            </p>
+            <p>
+              Complete your meal with our trio of signature instant chutneys simply add water for a gourmet, high-protein experience designed for your active lifestyle.
+            </p>
+          </div>
 
           {/* Search Bar */}
           <form onSubmit={handleSearchSubmit} className="max-w-md mx-auto lg:mx-0 relative mt-2">
@@ -116,53 +160,28 @@ export default function Hero({ setSearchQuery, setActiveView }) {
         </div>
 
         {/* Floating Animation Image Section */}
-        <div className="lg:col-span-5 relative flex justify-center items-center h-[350px] sm:h-[450px]" data-aos="zoom-in" data-aos-duration="1000">
+        <div className="lg:col-span-5 relative flex justify-center items-center h-[380px] sm:h-[480px] lg:h-[500px]" data-aos="zoom-in" data-aos-duration="1000">
           {/* Main Hero Circle Background */}
-          <div className="absolute w-[240px] h-[240px] sm:w-[360px] sm:h-[360px] rounded-full bg-gradient-to-tr from-primary to-accent opacity-20 animate-pulse pointer-events-none" />
+          <div className="absolute w-[300px] h-[300px] sm:w-[440px] sm:h-[440px] rounded-full bg-gradient-to-tr from-primary to-accent opacity-20 animate-pulse pointer-events-none" />
           
-          {/* Center Main Product Image */}
-          <div className="relative z-10 w-[220px] h-[220px] sm:w-[320px] sm:h-[320px] rounded-full overflow-hidden border-[6px] border-white dark:border-darkCard shadow-premium-hover transform hover:rotate-12 transition-all duration-700 animate-float-1 cursor-pointer">
-            <img
-              src="https://images.unsplash.com/photo-1586201375761-83865001e31c?q=80&w=600&auto=format&fit=crop"
-              alt="Premium Millet Kichdi and Spices"
-              className="w-full h-full object-cover"
-              loading="eager"
-            />
-          </div>
-
-          {/* Floating Card 1: Dosa Nutrition */}
-          <div className="absolute top-4 sm:top-10 -right-2 sm:-right-8 z-20 glass-card px-4 py-2.5 rounded-2xl shadow-premium animate-float-2 max-w-[150px] sm:max-w-[180px]">
-            <div className="flex items-center gap-2">
-              <div className="p-1 rounded-lg bg-success/20 text-success">
-                <ShieldCheck size={18} />
-              </div>
-              <div>
-                <p className="text-[10px] sm:text-xs font-extrabold text-textDark dark:text-cream uppercase tracking-wider">Finger Millet Dosa</p>
-                <p className="text-[9px] sm:text-[10px] text-textLight dark:text-cream/60">14g Protein • Low GI</p>
-              </div>
+          {/* Center Main Product Image Slideshow */}
+          <div className="relative z-10 w-[280px] h-[280px] sm:w-[400px] sm:h-[400px] rounded-full border-[6px] border-white dark:border-darkCard shadow-premium bg-white/60 dark:bg-darkBackground/60 flex items-center justify-center">
+            <div className="w-full h-full rounded-full overflow-hidden relative">
+              <img
+                src={MILLETS[currentMilletIndex].image}
+                alt={MILLETS[currentMilletIndex].alt}
+                className="w-full h-full object-contain p-1"
+                loading="eager"
+              />
             </div>
-          </div>
-
-          {/* Floating Card 2: Immunity Booster */}
-          <div className="absolute bottom-6 sm:bottom-12 -left-4 sm:-left-12 z-20 glass-card px-4 py-2.5 rounded-2xl shadow-premium animate-float-3 max-w-[150px] sm:max-w-[180px]">
-            <div className="flex items-center gap-2">
-              <div className="p-1 rounded-lg bg-highlight/20 text-highlight">
-                <Zap size={18} />
+            {/* Dynamic Active Millet Name Badge */}
+            {MILLETS[currentMilletIndex].name && (
+              <div className="absolute -bottom-3 sm:-bottom-4 left-1/2 transform -translate-x-1/2 z-20 bg-white/95 dark:bg-darkCard/95 backdrop-blur-md px-4 sm:px-5 py-1.5 sm:py-2 rounded-full border border-accent/20 shadow-premium transition-all duration-300">
+                <span className="text-[10px] sm:text-xs font-extrabold text-primary dark:text-success-light uppercase tracking-wider block whitespace-nowrap">
+                  {MILLETS[currentMilletIndex].name}
+                </span>
               </div>
-              <div>
-                <p className="text-[10px] sm:text-xs font-extrabold text-textDark dark:text-cream uppercase tracking-wider">Immunity Power</p>
-                <p className="text-[9px] sm:text-[10px] text-textLight dark:text-cream/60">Amla + Moringa Boost</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Floating Card 3: Gym Special */}
-          <div className="absolute bottom-4 sm:bottom-6 right-6 sm:right-10 z-20 glass-card px-3.5 py-2.5 rounded-2xl shadow-premium animate-float-1 max-w-[130px] sm:max-w-[150px]">
-            <span className="text-[9px] sm:text-[10px] font-bold bg-primary/20 text-primary dark:bg-success/20 dark:text-success-light px-2 py-0.5 rounded-full block text-center mb-1">
-              GYM SPECIAL
-            </span>
-            <p className="text-[10px] sm:text-xs font-bold text-center text-textDark dark:text-cream">Millet Noodles</p>
-            <p className="text-[9px] sm:text-[10px] text-center text-textLight dark:text-cream/50">100% Air-Dried</p>
+            )}
           </div>
         </div>
       </div>

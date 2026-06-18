@@ -515,7 +515,7 @@ export default function App() {
 
         {/* VIEW 2: FULL SHOP PRODUCT GRID */}
         {activeView === 'shop' && (
-          <div id="shop-section" className="pt-36 sm:pt-40 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
+          <div id="shop-section" className="pt-48 sm:pt-52 lg:pt-56 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
             
             {/* Title & Searching */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-accent/15 pb-6 mb-8 gap-4">
@@ -585,6 +585,66 @@ export default function App() {
                   Reset Shop Filters
                 </button>
               </div>
+            ) : selectedCategory === 'Hot Meal' ? (
+              <div className="space-y-12">
+                {/* Veg Millet Meals Section */}
+                {filteredProducts.filter(p => p.id.startsWith('hm-veg')).length > 0 && (
+                  <div className="space-y-6">
+                    <div className="border-b border-primary/20 dark:border-success-light/20 pb-3 flex items-center gap-2">
+                      <span className="text-2xl">🍲</span>
+                      <h3 className="text-xl sm:text-2xl font-outfit font-black text-primary dark:text-success-light">
+                        Veg Millet Meal - <span className="text-secondary dark:text-accent-light">₹150</span>
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {filteredProducts.filter(p => p.id.startsWith('hm-veg')).map((p) => {
+                        const itemInCart = cartItems.find(item => item.product.id === p.id);
+                        return (
+                          <ProductCard
+                            key={p.id}
+                            product={p}
+                            onAddToCart={handleAddToCart}
+                            onRemoveFromCart={handleRemoveFromCart}
+                            cartItem={itemInCart}
+                            onToggleWishlist={handleToggleWishlist}
+                            isWishlisted={wishlist.some(item => item.id === p.id)}
+                            onQuickView={setQuickViewProduct}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Non-Veg Millet Meals Section */}
+                {filteredProducts.filter(p => p.id.startsWith('hm-nonveg')).length > 0 && (
+                  <div className="space-y-6 pt-6">
+                    <div className="border-b border-highlight/20 pb-3 flex items-center gap-2">
+                      <span className="text-2xl">🍗</span>
+                      <h3 className="text-xl sm:text-2xl font-outfit font-black text-highlight">
+                        Non-Veg Millet Meal - <span className="text-secondary dark:text-accent-light">₹205</span>
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      {filteredProducts.filter(p => p.id.startsWith('hm-nonveg')).map((p) => {
+                        const itemInCart = cartItems.find(item => item.product.id === p.id);
+                        return (
+                          <ProductCard
+                            key={p.id}
+                            product={p}
+                            onAddToCart={handleAddToCart}
+                            onRemoveFromCart={handleRemoveFromCart}
+                            cartItem={itemInCart}
+                            onToggleWishlist={handleToggleWishlist}
+                            isWishlisted={wishlist.some(item => item.id === p.id)}
+                            onQuickView={setQuickViewProduct}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {filteredProducts.map((p) => {
@@ -609,7 +669,7 @@ export default function App() {
 
         {/* VIEW 3: WISHLIST VIEW */}
         {activeView === 'wishlist' && (
-          <div className="pt-36 sm:pt-40 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
+          <div className="pt-48 sm:pt-52 lg:pt-56 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
             <div className="border-b border-accent/15 pb-6 mb-8">
               <span className="text-[10px] font-extrabold uppercase tracking-widest bg-primary/20 text-primary dark:bg-success/20 dark:text-success-light px-3.5 py-1.5 rounded-full">
                 Saved Items
@@ -655,7 +715,7 @@ export default function App() {
 
         {/* VIEW 3.5: FULL CART PAGE */}
         {activeView === 'cart' && (
-          <div className="pt-36 sm:pt-40 pb-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
+          <div className="pt-48 sm:pt-52 lg:pt-56 pb-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
             <div className="border-b border-accent/15 pb-6 mb-8 flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-extrabold uppercase tracking-widest bg-primary/20 text-primary dark:bg-success/20 dark:text-success-light px-3.5 py-1.5 rounded-full">
@@ -807,7 +867,7 @@ export default function App() {
             setProducts={setProducts}
             orders={orders}
             setOrders={setOrders}
-            categories={['Ready Mix', 'Instant Mix', 'Powders', 'Noodles', 'Soups']}
+            categories={['Ready Mix', 'Instant Mix', 'Powders', 'Noodles', 'Soups', 'Hot Meal']}
             onAddToast={addToast}
           />
         )}
@@ -832,7 +892,7 @@ export default function App() {
 
         {/* VIEW 7: STANDALONE BEST SELLERS VIEW */}
         {activeView === 'bestsellers' && (
-          <div className="pt-36 sm:pt-40 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
+          <div className="pt-48 sm:pt-52 lg:pt-56 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
             <div className="text-center max-w-2xl mx-auto mb-12">
               <span className="text-[10px] font-extrabold uppercase tracking-widest bg-primary/20 text-primary dark:bg-success/20 dark:text-success-light px-3.5 py-1.5 rounded-full">
                 Crowd Favourites
@@ -867,7 +927,7 @@ export default function App() {
 
         {/* VIEW 8: STANDALONE ABOUT VIEW */}
         {activeView === 'about' && (
-          <div className="pt-36 sm:pt-40 pb-20 min-h-screen">
+          <div className="pt-48 sm:pt-52 lg:pt-56 pb-20 min-h-screen">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center max-w-2xl mx-auto mb-12">
                 <span className="text-[10px] font-extrabold uppercase tracking-widest bg-primary/20 text-primary dark:bg-success/20 dark:text-success-light px-3.5 py-1.5 rounded-full">
@@ -913,7 +973,7 @@ export default function App() {
 
         {/* VIEW 9: STANDALONE CONTACT VIEW */}
         {activeView === 'contact' && (
-          <div className="pt-36 sm:pt-40 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
+          <div className="pt-48 sm:pt-52 lg:pt-56 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
             <div className="text-center max-w-2xl mx-auto mb-12">
               <span className="text-[10px] font-extrabold uppercase tracking-widest bg-primary/20 text-primary dark:bg-success/20 dark:text-success-light px-3.5 py-1.5 rounded-full">
                 Get in Touch

@@ -14,7 +14,7 @@ export default function OrderTrackingView({ activeOrder, setActiveView }) {
 
   if (!activeOrder) {
     return (
-      <div className="pt-36 sm:pt-40 pb-20 px-4 max-w-2xl mx-auto min-h-screen flex flex-col items-center justify-center text-center space-y-6">
+      <div className="pt-48 sm:pt-52 lg:pt-56 pb-20 px-4 max-w-2xl mx-auto min-h-screen flex flex-col items-center justify-center text-center space-y-6">
         <div className="w-24 h-24 rounded-full bg-cream dark:bg-darkCard flex items-center justify-center text-4xl shadow-premium animate-bounce">
           📦
         </div>
@@ -57,7 +57,7 @@ export default function OrderTrackingView({ activeOrder, setActiveView }) {
   const activeIndex = getMilestoneIndex(activeOrder.status);
 
   return (
-    <div className="pt-36 sm:pt-40 pb-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto min-h-screen">
+    <div className="pt-48 sm:pt-52 lg:pt-56 pb-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto min-h-screen">
       
       {/* Header Cards */}
       <div className="bg-white dark:bg-darkCard rounded-3xl border border-accent/10 dark:border-accent/5 shadow-premium p-6 sm:p-8 space-y-6">

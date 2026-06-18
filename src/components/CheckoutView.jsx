@@ -109,7 +109,7 @@ export default function CheckoutView({
   };
 
   return (
-    <div className="pt-36 sm:pt-40 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-screen">
+    <div className="pt-48 sm:pt-52 lg:pt-56 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto min-h-screen">
       {/* Back Button */}
       <button
         onClick={handleBackStep}

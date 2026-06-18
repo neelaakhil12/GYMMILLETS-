@@ -48,13 +48,7 @@ export default function ProductCard({
       data-aos="fade-up"
     >
       {/* Product Image Section */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-cream dark:bg-cream-dark/5">
-        {/* Badge Overlay */}
-        {product.badge && (
-          <span className="absolute top-3.5 left-3.5 z-10 text-[9px] font-extrabold uppercase tracking-wider bg-highlight text-cream px-2.5 py-1 rounded-full shadow-premium">
-            {product.badge}
-          </span>
-        )}
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-white dark:bg-darkCard">
 
         {/* Wishlist Button Overlay */}
         <button
@@ -73,7 +67,7 @@ export default function ProductCard({
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          className="w-full h-full object-contain p-1 transition-transform duration-700 group-hover:scale-105"
           loading="lazy"
         />
 
