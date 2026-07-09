@@ -61,7 +61,7 @@ export default function AiRecommendations({ onQuickView, onAddToCart }) {
             AI-Powered Nutrition Advisor
           </h2>
           <p className="text-sm text-textLight dark:text-cream/50 mt-2 font-semibold">
-            Choose your fitness or health target and let our organic advisor build the perfect plate.
+            Choose your fitness or health target and let our natural advisor build the perfect plate.
           </p>
         </div>
 

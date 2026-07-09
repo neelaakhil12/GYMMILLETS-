@@ -16,13 +16,67 @@ import Testimonials from './components/Testimonials';
 import WhyChooseUs from './components/WhyChooseUs';
 import Footer from './components/Footer';
 import Toast from './components/Toast';
+import AnimatedCounter from './components/AnimatedCounter';
 
 // Importing Icons for UI
 import {
   Search, Heart, ShoppingBag, ArrowRight, Settings, Filter,
   Phone, Shield, User, KeyRound, ShoppingCart, Sun, Moon,
-  MapPin, Mail
+  MapPin, Mail, CookingPot, Soup, Flame, Zap, Sparkles,
+  Target, Eye, Compass, Users, Award
 } from 'lucide-react';
+
+const CATEGORIES = [
+  {
+    name: 'Ready Mix',
+    image: '/cat-ready-mix.png',
+    filter: 'Ready Mix',
+    glowClass: 'bg-primary',
+    count: PRODUCTS.filter(p => p.category === 'Ready Mix').length
+  },
+  {
+    name: 'Freeze Dried Powders',
+    image: '/cat-powders.png',
+    filter: 'Freeze Dried Powders',
+    glowClass: 'bg-secondary',
+    count: PRODUCTS.filter(p => p.category === 'Freeze Dried Powders').length
+  },
+  {
+    name: 'Premix',
+    image: '/cat-premix.png',
+    filter: 'Ready Mix',
+    glowClass: 'bg-primary',
+    count: PRODUCTS.filter(p => p.category === 'Ready Mix').length
+  },
+  {
+    name: 'Instant Mix',
+    image: '/cat-instant-mix.png',
+    filter: 'Instant Mix',
+    glowClass: 'bg-highlight',
+    count: PRODUCTS.filter(p => p.category === 'Instant Mix').length
+  },
+  {
+    name: 'Noodles',
+    image: '/cat-noodles.png',
+    filter: 'Noodles',
+    glowClass: 'bg-success',
+    count: PRODUCTS.filter(p => p.category === 'Noodles').length
+  },
+  {
+    name: 'Soups',
+    image: '/cat-soups.png',
+    filter: 'Soups',
+    glowClass: 'bg-accent',
+    count: PRODUCTS.filter(p => p.category === 'Soups').length
+  },
+  {
+    name: 'Hot Meals',
+    image: '/cat-hot-meals.png',
+    filter: 'Hot Meal',
+    glowClass: 'bg-primary',
+    count: PRODUCTS.filter(p => p.category === 'Hot Meal').length
+  }
+];
 
 export default function App() {
   // --- STATE ---
@@ -195,7 +249,7 @@ export default function App() {
 
     if (isRegisterMode) {
       const newUser = {
-        name: loginForm.name || 'Organic Guest',
+        name: loginForm.name || 'Natural Guest',
         email: loginForm.email,
         mobile: '9988776655'
       };
@@ -251,7 +305,7 @@ export default function App() {
   const totalCartPrice = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-cream dark:bg-[#121212] flex flex-col font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-[#121212] flex flex-col font-sans transition-colors duration-300">
       
       {/* Toast Notification Container */}
       <Toast toasts={toasts} onRemoveToast={removeToast} />
@@ -278,6 +332,118 @@ export default function App() {
           <div className="space-y-0">
             <Hero setSearchQuery={setSearchQuery} setActiveView={setActiveView} />
             
+            {/* Shop By Category Section */}
+            <section className="py-16 bg-cream/30 dark:bg-cream-dark/5 border-b border-accent/10">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Heading format from user screenshot */}
+                <div className="flex justify-between items-center mb-8" data-aos="fade-up">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-8 bg-primary dark:bg-success rounded-full" />
+                    <h2 className="text-2xl sm:text-3xl font-outfit font-black text-textDark dark:text-cream">
+                      Shop by Category
+                    </h2>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedCategory('All');
+                      setActiveView('shop');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="text-primary hover:text-primary-dark dark:text-success-light dark:hover:text-success font-bold text-sm sm:text-base flex items-center gap-1 transition-colors"
+                  >
+                    <span>View All</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {CATEGORIES.map((cat, idx) => {
+                    return (
+                      <button
+                        key={cat.name}
+                        onClick={() => {
+                          setSelectedCategory(cat.filter);
+                          setActiveView('shop');
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="group flex flex-col justify-between bg-white dark:bg-darkCard rounded-2xl border border-accent/15 dark:border-accent/5 overflow-hidden transition-all duration-300 hover:border-primary dark:hover:border-success hover:shadow-premium-hover scale-100 hover:scale-[1.02] active:scale-95 text-left"
+                        data-aos="fade-up"
+                        data-aos-delay={idx * 50}
+                      >
+                        {/* Rectangular Image wrapper on top */}
+                        <div className="aspect-[4/3] w-full overflow-hidden relative">
+                          <img 
+                            src={cat.image} 
+                            alt={cat.name} 
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                          />
+                        </div>
+
+                        {/* Centered Category Title Area */}
+                        <div className="w-full py-4 text-center bg-white dark:bg-darkCard border-t border-accent/10 dark:border-accent/5">
+                          <span className="font-outfit font-bold text-sm sm:text-base text-textDark dark:text-cream group-hover:text-primary dark:group-hover:text-success-light transition-colors block">
+                            {cat.name}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+
+            {/* Quick Stats Section */}
+            <section className="py-12 bg-cream/10 dark:bg-cream-dark/5 border-b border-accent/10">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center" data-aos="fade-up">
+                  {/* Stat 1 */}
+                  <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-darkCard rounded-3xl border border-accent/10 dark:border-accent/5 shadow-premium space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary dark:bg-success/20 dark:text-success-light flex items-center justify-center">
+                      <Users size={22} />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-outfit font-black text-textDark dark:text-cream">
+                        <AnimatedCounter target={25} suffix=" Million+" />
+                      </h3>
+                      <p className="text-xs text-textLight dark:text-cream/50 mt-1 font-bold uppercase tracking-wider">
+                        Happy Customers
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Stat 2 */}
+                  <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-darkCard rounded-3xl border border-accent/10 dark:border-accent/5 shadow-premium space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-secondary/10 text-secondary dark:bg-secondary/20 dark:text-accent-light flex items-center justify-center">
+                      <Zap size={22} />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-outfit font-black text-textDark dark:text-cream">
+                        <AnimatedCounter target={100} suffix="% Natural" />
+                      </h3>
+                      <p className="text-xs text-textLight dark:text-cream/50 mt-1 font-bold uppercase tracking-wider">
+                        Pesticide-Free Grains
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Stat 3 */}
+                  <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-darkCard rounded-3xl border border-accent/10 dark:border-accent/5 shadow-premium space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-highlight/10 text-highlight dark:bg-[#D9987D]/20 dark:text-[#D9987D] flex items-center justify-center">
+                      <Award size={22} />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-outfit font-black text-textDark dark:text-cream">
+                        <AnimatedCounter target={100} suffix="% Quality" />
+                      </h3>
+                      <p className="text-xs text-textLight dark:text-cream/50 mt-1 font-bold uppercase tracking-wider">
+                        Handcrafted Standards
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             {/* Best Sellers Section */}
             <section id="bestsellers" className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
               <div className="text-center max-w-2xl mx-auto mb-12" data-aos="fade-up">
@@ -288,7 +454,7 @@ export default function App() {
                   Our Best Selling Millets
                 </h2>
                 <p className="text-sm text-textLight dark:text-cream/50 mt-2 font-semibold">
-                  Delicious, high-protein, organic recipes backed by fitness coaches.
+                  Delicious, high-protein, natural recipes backed by fitness coaches.
                 </p>
               </div>
 
@@ -318,7 +484,7 @@ export default function App() {
                   }}
                   className="px-8 py-3.5 rounded-full bg-primary hover:bg-primary-dark text-cream font-bold transition-all shadow-premium flex items-center justify-center gap-2 mx-auto scale-100 hover:scale-[1.02] active:scale-95 text-sm"
                 >
-                  <span>Explore Full Organic Menu</span>
+                  <span>Explore Full Natural Menu</span>
                   <ArrowRight size={16} />
                 </button>
               </div>
@@ -336,10 +502,10 @@ export default function App() {
                     Store Catalog Preview
                   </span>
                   <h2 className="text-3xl sm:text-4xl font-outfit font-black text-textDark dark:text-cream mt-3">
-                    Explore Our Organic Shop
+                    Explore Our Natural Shop
                   </h2>
                   <p className="text-sm text-textLight dark:text-cream/50 mt-2 font-semibold font-sans">
-                    Nutrient-dense pre-mixes, organic spice powders, and healthy lifestyle noodles.
+                    Nutrient-dense pre-mixes, natural spice powders, and healthy lifestyle noodles.
                   </p>
                 </div>
 
@@ -380,63 +546,7 @@ export default function App() {
               </div>
             </section>
 
-            {/* 2. Wishlist Preview Section */}
-            <section id="wishlist-preview" className="py-20 bg-cream/30 dark:bg-cream-dark/5 scroll-mt-20 border-t border-accent/5">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="text-center max-w-2xl mx-auto mb-12" data-aos="fade-up">
-                  <span className="text-xs uppercase tracking-widest font-extrabold text-highlight bg-highlight/10 px-3.5 py-1.5 rounded-full">
-                    Your Gym Favorites
-                  </span>
-                  <h2 className="text-3xl sm:text-4xl font-outfit font-black text-textDark dark:text-cream mt-3">
-                    Your Personal Wishlist
-                  </h2>
-                  <p className="text-sm text-textLight dark:text-cream/50 mt-2 font-semibold font-sans">
-                    Quickly check and purchase the millet products you bookmarked for your diet plan.
-                  </p>
-                </div>
 
-                {wishlist.length === 0 ? (
-                  <div className="text-center py-12 bg-white dark:bg-darkCard rounded-3xl border border-accent/10 p-8 max-w-xl mx-auto space-y-4" data-aos="fade-up">
-                    <span className="text-3xl block">❤️</span>
-                    <h3 className="text-base font-outfit font-bold text-textDark dark:text-cream">Wishlist is empty</h3>
-                    <p className="text-xs text-textLight dark:text-cream/50 max-w-xs mx-auto font-medium font-sans">
-                      Bookmark items from the shop using the heart icon and they'll instantly appear here in your daily planner!
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" data-aos="fade-up">
-                    {wishlist.slice(0, 4).map((p) => {
-                      const itemInCart = cartItems.find(item => item.product.id === p.id);
-                      return (
-                        <ProductCard
-                          key={p.id}
-                          product={p}
-                          onAddToCart={handleAddToCart}
-                          onRemoveFromCart={handleRemoveFromCart}
-                          cartItem={itemInCart}
-                          onToggleWishlist={handleToggleWishlist}
-                          isWishlisted={true}
-                          onQuickView={setQuickViewProduct}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-
-                <div className="text-center mt-12" data-aos="fade-up">
-                  <button
-                    onClick={() => {
-                      setActiveView('wishlist');
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="px-8 py-3.5 rounded-full border-2 border-highlight text-highlight hover:bg-highlight hover:text-cream font-bold transition-all shadow-premium flex items-center justify-center gap-2 mx-auto scale-100 hover:scale-[1.02] active:scale-95 text-sm"
-                  >
-                    <span>View Full Wishlist Dashboard</span>
-                    <ArrowRight size={16} />
-                  </button>
-                </div>
-              </div>
-            </section>
 
             {/* 3. Active Order Tracking Preview Section */}
             {activeOrder && (
@@ -523,7 +633,7 @@ export default function App() {
                 <span className="text-[10px] font-extrabold uppercase tracking-widest bg-primary/20 text-primary dark:bg-success/20 dark:text-success-light px-3.5 py-1.5 rounded-full">
                   GymMillets Food Market
                 </span>
-                <h1 className="text-3xl font-outfit font-black text-textDark dark:text-cream mt-2">Organic Millet Store</h1>
+                <h1 className="text-3xl font-outfit font-black text-textDark dark:text-cream mt-2">Natural Millet Store</h1>
               </div>
 
               {/* Search input in shop page */}
@@ -571,7 +681,7 @@ export default function App() {
             ) : filteredProducts.length === 0 ? (
               <div className="text-center py-20 bg-white dark:bg-darkCard rounded-3xl border border-accent/10 p-8 space-y-4">
                 <span className="text-4xl block">🔍</span>
-                <h3 className="text-lg font-outfit font-black text-textDark dark:text-cream">No Organic Grains Match</h3>
+                <h3 className="text-lg font-outfit font-black text-textDark dark:text-cream">No Natural Grains Match</h3>
                 <p className="text-xs text-textLight dark:text-cream/50 max-w-sm mx-auto font-medium">
                   We couldn't find any products matching your active filters. Try resetting search fields or categories!
                 </p>
@@ -867,7 +977,7 @@ export default function App() {
             setProducts={setProducts}
             orders={orders}
             setOrders={setOrders}
-            categories={['Ready Mix', 'Instant Mix', 'Powders', 'Noodles', 'Soups', 'Hot Meal']}
+            categories={['Ready Mix', 'Instant Mix', 'Freeze Dried Powders', 'Noodles', 'Soups', 'Hot Meal']}
             onAddToast={addToast}
           />
         )}
@@ -890,41 +1000,6 @@ export default function App() {
           />
         )}
 
-        {/* VIEW 7: STANDALONE BEST SELLERS VIEW */}
-        {activeView === 'bestsellers' && (
-          <div className="pt-48 sm:pt-52 lg:pt-56 pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen">
-            <div className="text-center max-w-2xl mx-auto mb-12">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest bg-primary/20 text-primary dark:bg-success/20 dark:text-success-light px-3.5 py-1.5 rounded-full">
-                Crowd Favourites
-              </span>
-              <h1 className="text-3xl sm:text-4xl font-outfit font-black text-textDark dark:text-cream mt-3">
-                Our Best Selling Millets
-              </h1>
-              <p className="text-sm text-textLight dark:text-cream/50 mt-2 font-semibold font-sans">
-                Delicious, high-protein, organic recipes backed by fitness coaches.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {bestSellers.map((p) => {
-                const itemInCart = cartItems.find(item => item.product.id === p.id);
-                return (
-                  <ProductCard
-                    key={p.id}
-                    product={p}
-                    onAddToCart={handleAddToCart}
-                    onRemoveFromCart={handleRemoveFromCart}
-                    cartItem={itemInCart}
-                    onToggleWishlist={handleToggleWishlist}
-                    isWishlisted={wishlist.some(item => item.id === p.id)}
-                    onQuickView={setQuickViewProduct}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* VIEW 8: STANDALONE ABOUT VIEW */}
         {activeView === 'about' && (
           <div className="pt-48 sm:pt-52 lg:pt-56 pb-20 min-h-screen">
@@ -934,38 +1009,88 @@ export default function App() {
                   About GymMillets
                 </span>
                 <h1 className="text-3xl sm:text-4xl font-outfit font-black text-textDark dark:text-cream mt-3">
-                  Our Organic Grain Science
+                  Our Natural Grain Science
                 </h1>
                 <p className="text-sm text-textLight dark:text-cream/50 mt-2 font-semibold font-sans">
                   Handcrafted with pure nutrition facts to support your fitness and athletic goals.
                 </p>
               </div>
 
-              {/* Quality Cards Component */}
-              <WhyChooseUs />
-
               {/* Brand Story block */}
-              <div className="mt-16 bg-white dark:bg-darkCard border border-accent/10 dark:border-accent/5 rounded-3xl p-8 sm:p-12 shadow-premium">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-                  <div>
+              <div className="bg-white dark:bg-darkCard border border-accent/10 dark:border-accent/5 rounded-3xl p-8 sm:p-12 shadow-premium" data-aos="fade-up">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-center">
+                  <div className="md:col-span-8">
                     <h3 className="text-2xl font-outfit font-black text-textDark dark:text-cream mb-4">
                       Crafting Pure Grains Since 2018
                     </h3>
-                    <p className="text-xs sm:text-sm text-textLight dark:text-cream/70 leading-relaxed font-semibold mb-4">
+                    <p className="text-xs sm:text-sm text-textLight dark:text-cream/70 leading-relaxed font-semibold mb-4 font-sans">
                       At GymMillets, we believe that fitness starts in the kitchen, not just the gym. Traditional millets have been India's superfoods for thousands of years, but modern processing removed their nutrient-dense husks.
                     </p>
-                    <p className="text-xs sm:text-sm text-textLight dark:text-cream/70 leading-relaxed font-semibold">
-                      We source 100% organic dryland grains from smallholder farmers, and slow-roast them at precise temperatures. No preservatives, no refined sugar, and zero additives. Just pure, ancient, muscle-building energy.
+                    <p className="text-xs sm:text-sm text-textLight dark:text-cream/70 leading-relaxed font-semibold font-sans">
+                      We source 100% natural dryland grains from smallholder farmers, and slow-roast them at precise temperatures. No preservatives, no refined sugar, and zero additives. Just pure, ancient, muscle-building energy.
                     </p>
                   </div>
-                  <div className="rounded-2xl overflow-hidden shadow-premium">
+                  <div className="md:col-span-4 rounded-2xl overflow-hidden shadow-premium h-[250px] sm:h-[300px] w-full max-w-sm justify-self-center">
                     <img 
-                      src="https://images.unsplash.com/photo-1574316071802-0d684efa7bf5?q=80&w=800&auto=format&fit=crop" 
-                      alt="Millet field" 
-                      className="w-full h-auto object-cover hover:scale-105 transition-transform duration-500" 
+                      src="/brand-story.png" 
+                      alt="Brand Story" 
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Core Values Section: Vision, Mission, Aim */}
+              <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Vision Card */}
+                <div className="bg-white dark:bg-darkCard border border-accent/10 dark:border-accent/5 rounded-3xl p-8 shadow-premium flex flex-col justify-between hover:shadow-premium-hover scale-100 hover:scale-[1.02] transition-all duration-300" data-aos="fade-up" data-aos-delay="50">
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary dark:bg-success/20 dark:text-success-light flex items-center justify-center">
+                      <Eye size={24} />
+                    </div>
+                    <h3 className="text-xl font-outfit font-black text-textDark dark:text-cream">
+                      Our Vision
+                    </h3>
+                    <p className="text-xs sm:text-sm text-textLight dark:text-cream/70 leading-relaxed font-semibold font-sans">
+                      To empower millions of active individuals globally by integrating ancient, nutrient-dense natural superfoods into modern daily fitness regimes, fostering sustainable global wellness.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Mission Card */}
+                <div className="bg-white dark:bg-darkCard border border-accent/10 dark:border-accent/5 rounded-3xl p-8 shadow-premium flex flex-col justify-between hover:shadow-premium-hover scale-100 hover:scale-[1.02] transition-all duration-300" data-aos="fade-up" data-aos-delay="100">
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 rounded-2xl bg-secondary/10 text-secondary dark:bg-secondary/20 dark:text-accent-light flex items-center justify-center">
+                      <Compass size={24} />
+                    </div>
+                    <h3 className="text-xl font-outfit font-black text-textDark dark:text-cream">
+                      Our Mission
+                    </h3>
+                    <p className="text-xs sm:text-sm text-textLight dark:text-cream/70 leading-relaxed font-semibold font-sans">
+                      Sourcing premium grains ethically from smallholder farmers, conserving local heritage, and crafting clean, high-protein formulations without preservatives or chemical additives.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Aim Card */}
+                <div className="bg-white dark:bg-darkCard border border-accent/10 dark:border-accent/5 rounded-3xl p-8 shadow-premium flex flex-col justify-between hover:shadow-premium-hover scale-100 hover:scale-[1.02] transition-all duration-300" data-aos="fade-up" data-aos-delay="150">
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 rounded-2xl bg-highlight/10 text-highlight dark:bg-[#D9987D]/20 dark:text-[#D9987D] flex items-center justify-center">
+                      <Target size={24} />
+                    </div>
+                    <h3 className="text-xl font-outfit font-black text-textDark dark:text-cream">
+                      Our Aim
+                    </h3>
+                    <p className="text-xs sm:text-sm text-textLight dark:text-cream/70 leading-relaxed font-semibold font-sans">
+                      To make clean, high-performance daily nutrition easy, convenient, and delicious—fueling healthy, active lifestyles with modern, ancestral grain science.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quality Cards Component (Why Choose Us) */}
+              <div className="mt-16 border-t border-accent/10 pt-16">
+                <WhyChooseUs />
               </div>
             </div>
           </div>
@@ -1059,7 +1184,7 @@ export default function App() {
                       <div>
                         <p className="text-[9px] uppercase tracking-widest text-white/40 mb-0.5">Physical Store Address</p>
                         <p className="text-xs font-semibold text-cream/80 leading-relaxed">
-                          12A, Organic Complex, Indiranagar,<br />Bangalore – 560038, Karnataka, IN
+                          12A, Natural Complex, Indiranagar,<br />Bangalore – 560038, Karnataka, IN
                         </p>
                       </div>
                     </li>
@@ -1142,7 +1267,7 @@ export default function App() {
                 {isRegisterMode ? 'Register Account' : 'Login Store'}
               </h3>
               <p className="text-xs text-textLight dark:text-cream/50">
-                {isRegisterMode ? 'Sign up to purchase organic millet foods.' : 'Welcome back to your organic diet tracker.'}
+                {isRegisterMode ? 'Sign up to purchase natural millet foods.' : 'Welcome back to your natural diet tracker.'}
               </p>
             </div>
 
@@ -1205,7 +1330,7 @@ export default function App() {
 
       {/* Floating WhatsApp Chat Button */}
       <a
-        href="https://wa.me/919876543210?text=Hi%20GymMillets!%20I%27d%20love%20to%20order%20some%20healthy%20organic%20millet%20premixes."
+        href="https://wa.me/919876543210?text=Hi%20GymMillets!%20I%27d%20love%20to%20order%20some%20healthy%20natural%20millet%20premixes."
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-24 md:bottom-8 right-6 md:right-8 z-50 group flex items-center gap-2 p-3.5 sm:p-4 rounded-full bg-[#25D366] text-white shadow-premium hover:shadow-premium-hover hover:bg-[#20ba5a] active:scale-95 transition-all duration-300 animate-bounce"

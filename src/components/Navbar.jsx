@@ -33,7 +33,6 @@ export default function Navbar({
   const navLinks = [
     { label: 'Home', view: 'home' },
     { label: 'Shop', view: 'shop' },
-    { label: 'Best Sellers', view: 'bestsellers' },
     { label: 'About', view: 'about' },
     { label: 'Contact', view: 'contact' },
   ];
@@ -46,10 +45,10 @@ export default function Navbar({
 
   return (
     <nav
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-[#1C1A17] dark:bg-black border-b border-accent/15 shadow-premium ${
         isScrolled || mobileMenuOpen
-          ? 'bg-cream dark:bg-cream-dark border-b border-accent/10 shadow-premium py-3'
-          : 'bg-transparent py-5'
+          ? 'py-3'
+          : 'py-5'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -68,7 +67,7 @@ export default function Navbar({
                 className={`px-3.5 py-2 rounded-full font-medium text-sm transition-all duration-300 ${
                   activeView === link.view
                     ? 'bg-primary text-cream shadow-premium'
-                    : 'text-textDark hover:bg-primary/10 dark:text-cream/90 dark:hover:bg-cream/10'
+                    : 'text-cream/80 hover:text-cream hover:bg-white/10'
                 }`}
               >
                 {link.label}
@@ -81,17 +80,16 @@ export default function Navbar({
             {/* Dark Mode Toggle */}
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className="p-2.5 rounded-full text-textDark hover:bg-primary/10 dark:text-cream/90 dark:hover:bg-cream/10 transition-colors duration-300"
+              className="p-2.5 rounded-full text-cream/80 hover:text-cream hover:bg-white/10 transition-colors duration-300"
               aria-label="Toggle Dark Mode"
             >
               {darkMode ? <Sun size={20} className="text-accent" /> : <Moon size={20} className="text-secondary" />}
             </button>
 
-
             {/* Wishlist */}
             <button
               onClick={() => setActiveView('wishlist')}
-              className="p-2.5 rounded-full text-textDark hover:bg-primary/10 dark:text-cream/90 dark:hover:bg-cream/10 transition-colors duration-300 relative"
+              className="p-2.5 rounded-full text-cream/80 hover:text-cream hover:bg-white/10 transition-colors duration-300 relative"
             >
               <Heart size={20} className={wishlistCount > 0 ? 'fill-highlight text-highlight' : ''} />
               {wishlistCount > 0 && (
@@ -104,7 +102,7 @@ export default function Navbar({
             {/* Cart Button */}
             <button
               onClick={onOpenCart}
-              className="p-2.5 rounded-full text-textDark hover:bg-primary/10 dark:text-cream/90 dark:hover:bg-cream/10 transition-colors duration-300 relative"
+              className="p-2.5 rounded-full text-cream/80 hover:text-cream hover:bg-white/10 transition-colors duration-300 relative"
             >
               <ShoppingCart size={20} />
               {cartCount > 0 && (
@@ -120,7 +118,7 @@ export default function Navbar({
                 <div>
                   <button
                     onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 dark:bg-cream/10 text-textDark dark:text-cream transition-all duration-300 border border-primary/20 hover:border-primary/40"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-cream transition-all duration-300 border border-white/20 hover:border-white/40"
                   >
                     <User size={16} className="text-primary dark:text-success-light" />
                     <span className="text-xs font-medium max-w-[80px] truncate">{currentUser.name}</span>
@@ -169,7 +167,7 @@ export default function Navbar({
             {/* Dark Mode */}
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-full text-textDark hover:bg-primary/10 dark:text-cream/90 dark:hover:bg-cream/10 transition-colors"
+              className="p-2 rounded-full text-cream/80 hover:text-cream hover:bg-white/10 transition-colors"
             >
               {darkMode ? <Sun size={18} className="text-accent" /> : <Moon size={18} className="text-secondary" />}
             </button>
@@ -177,7 +175,7 @@ export default function Navbar({
             {/* Mobile Cart */}
             <button
               onClick={onOpenCart}
-              className="p-2 rounded-full text-textDark hover:bg-primary/10 dark:text-cream/90 dark:hover:bg-cream/10 transition-colors relative"
+              className="p-2 rounded-full text-cream/80 hover:text-cream hover:bg-white/10 transition-colors relative"
             >
               <ShoppingCart size={18} />
               {cartCount > 0 && (
@@ -190,7 +188,7 @@ export default function Navbar({
             {/* Hamburger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-full text-textDark hover:bg-primary/10 dark:text-cream/90 dark:hover:bg-cream/10 transition-colors"
+              className="p-2 rounded-full text-cream/80 hover:text-cream hover:bg-white/10 transition-colors"
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -200,7 +198,7 @@ export default function Navbar({
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-cream dark:bg-cream-dark shadow-premium border-b border-accent/20 px-4 pt-2 pb-6 space-y-2 mt-2 max-h-[85vh] overflow-y-auto">
+        <div className="md:hidden bg-[#1C1A17] dark:bg-black shadow-premium border-b border-accent/20 px-4 pt-2 pb-6 space-y-2 mt-2 max-h-[85vh] overflow-y-auto">
           {navLinks.map((link) => (
             <button
               key={link.label}
@@ -208,7 +206,7 @@ export default function Navbar({
               className={`block w-full text-left px-4 py-2.5 rounded-2xl font-medium text-base transition-colors ${
                 activeView === link.view
                   ? 'bg-primary text-cream'
-                  : 'text-textDark hover:bg-primary/10 dark:text-cream/90'
+                  : 'text-cream/80 hover:text-cream hover:bg-white/10'
               }`}
             >
               {link.label}
@@ -217,7 +215,7 @@ export default function Navbar({
           <div className="border-t border-accent/10 my-3 pt-3 flex flex-col gap-2.5">
             <button
               onClick={() => handleNavClick('wishlist')}
-              className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-textDark hover:bg-primary/10 dark:text-cream/90 text-left font-medium"
+              className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-cream/80 hover:text-cream hover:bg-white/10 text-left font-medium"
             >
               <Heart size={18} className={wishlistCount > 0 ? 'fill-highlight text-highlight' : ''} />
               <span>Wishlist ({wishlistCount})</span>
@@ -227,14 +225,14 @@ export default function Navbar({
               <>
                 <button
                   onClick={() => handleNavClick('order-tracking')}
-                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-textDark hover:bg-primary/10 dark:text-cream/90 text-left font-medium"
+                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-cream/80 hover:text-cream hover:bg-white/10 text-left font-medium"
                 >
                   <ShoppingCart size={18} />
                   <span>Track Orders</span>
                 </button>
                 <div className="px-4 py-2 flex items-center justify-between border-t border-accent/5 mt-1">
-                  <span className="text-xs text-textLight dark:text-cream/50 truncate max-w-[150px]">
-                    Logged in as <strong className="text-textDark dark:text-cream">{currentUser.name}</strong>
+                  <span className="text-xs text-cream/60 truncate max-w-[150px]">
+                    Logged in as <strong className="text-cream">{currentUser.name}</strong>
                   </span>
                   <button
                     onClick={() => {

@@ -37,7 +37,7 @@ export default function Footer({ setActiveView, setSelectedCategory, onAddToast 
             <img src="/logo.png" alt="Gym Millets" className="h-28 sm:h-32 w-auto object-contain hover:scale-105 transition-transform duration-300 rounded-full shadow-premium" />
           </div>
           <p className="text-xs sm:text-sm text-cream/60 leading-relaxed font-semibold max-w-sm">
-            Premium healthy millet premixes, powders, soups, and noodles. Handcrafted with traditional organic grain science to support your active lifestyle.
+            Premium healthy millet premixes, powders, soups, and noodles. Handcrafted with traditional natural grain science to support your active lifestyle.
           </p>
           {/* Social Icons */}
           <div className="flex gap-3 pt-2">
@@ -77,11 +77,6 @@ export default function Footer({ setActiveView, setSelectedCategory, onAddToast 
               </button>
             </li>
             <li>
-              <button onClick={() => handleViewLink('bestsellers')} className="hover:text-cream transition-colors text-left hover:translate-x-1 transform duration-200">
-                Best Sellers
-              </button>
-            </li>
-            <li>
               <button onClick={() => handleViewLink('about')} className="hover:text-cream transition-colors text-left hover:translate-x-1 transform duration-200">
                 About
               </button>
@@ -109,8 +104,8 @@ export default function Footer({ setActiveView, setSelectedCategory, onAddToast 
               </button>
             </li>
             <li>
-              <button onClick={() => handleCategoryLink('Powders')} className="hover:text-cream transition-colors text-left hover:translate-x-1 transform duration-200">
-                Immunity Powders
+              <button onClick={() => handleCategoryLink('Freeze Dried Powders')} className="hover:text-cream transition-colors text-left hover:translate-x-1 transform duration-200">
+                Freeze Dried Powders
               </button>
             </li>
             <li>
@@ -142,7 +137,7 @@ export default function Footer({ setActiveView, setSelectedCategory, onAddToast 
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-widest text-cream/40 mb-0.5">Address</p>
                 <p className="text-xs sm:text-sm font-semibold text-cream/70 leading-relaxed">
-                  12A, Organic Complex, Indiranagar,<br />Bangalore – 560038, Karnataka, IN
+                  12A, Natural Complex, Indiranagar,<br />Bangalore – 560038, Karnataka, IN
                 </p>
               </div>
             </li>
@@ -176,7 +171,7 @@ export default function Footer({ setActiveView, setSelectedCategory, onAddToast 
       {/* Footer Bottom Row */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 text-center">
         <div className="text-xs text-cream/40 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© 2026 GymMillets. All rights reserved. 🌾 Designed for clean organic health.</p>
+          <p>© 2026 GymMillets. All rights reserved. 🌾 Designed for clean natural health.</p>
           <div className="flex gap-4">
             <a href="#privacy" className="hover:text-cream transition-colors">Privacy Policy</a>
             <a href="#terms" className="hover:text-cream transition-colors">Terms of Service</a>

@@ -5,7 +5,7 @@ const MILLETS = [
   {
     name: "",
     image: "/millet-mix.png",
-    alt: "Organic Multi Millet Mix"
+    alt: "Natural Multi Millet Mix"
   },
   {
     name: "Sorghum (Jowar)",
@@ -76,8 +76,8 @@ export default function Hero({ setSearchQuery, setActiveView }) {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-36 sm:pt-40 lg:pt-44 bg-gradient-to-br from-cream via-[#F4EFE6] to-[#ECE5D9] dark:from-[#121212] dark:via-[#1A1A1A] dark:to-[#161412] px-4 sm:px-6 lg:px-8">
-      {/* Decorative Organic Blobs */}
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden pt-36 sm:pt-40 lg:pt-44 bg-white dark:bg-[#121212] px-4 sm:px-6 lg:px-8">
+      {/* Decorative Natural Blobs */}
       <div className="absolute top-1/4 -left-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-accent/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute top-10 right-1/4 w-60 h-60 bg-success/10 rounded-full blur-3xl pointer-events-none" />
@@ -88,13 +88,16 @@ export default function Hero({ setSearchQuery, setActiveView }) {
           {/* Tagline */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary dark:bg-success/20 dark:text-success-light font-outfit text-xs sm:text-sm font-semibold tracking-wide border border-primary/20">
             <Flame size={14} className="animate-pulse" />
-            <span>100% Pure Organic Millet Nutrition</span>
+            <span>100% Pure Natural Millet Nutrition</span>
           </div>
 
           {/* Heading */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-outfit font-extrabold text-textDark dark:text-cream leading-tight sm:leading-none">
             Healthy Millet Foods
           </h1>
+          <p className="text-lg sm:text-xl font-outfit font-semibold text-secondary dark:text-accent-light tracking-wide mt-2">
+            Nourish Naturally, Thrive daily
+          </p>
 
           {/* Subheading */}
           <div className="text-base sm:text-lg text-textLight dark:text-cream/70 max-w-xl mx-auto lg:mx-0 font-medium space-y-4">

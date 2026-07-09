@@ -41,7 +41,7 @@ export default function WhyChooseUs() {
             Why Fitness Pros Choose Us
           </h2>
           <p className="text-sm text-textLight dark:text-cream/50 mt-2 font-semibold">
-            Click any premium nutrition card below to explore the organic health science.
+            Click any premium nutrition card below to explore the natural health science.
           </p>
         </div>
 
@@ -79,7 +79,7 @@ export default function WhyChooseUs() {
                 {/* Flipped Deep Dive Face */}
                 <div className={`space-y-3 transition-opacity duration-300 flex flex-col justify-center h-full ${isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'}`}>
                   <span className="text-[10px] font-extrabold text-primary dark:text-success-light uppercase tracking-widest">
-                    Organic Health Science
+                    Natural Health Science
                   </span>
                   <p className="text-xs sm:text-sm text-textDark dark:text-cream font-medium leading-relaxed">
                     {deepDives[item.id]}

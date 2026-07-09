@@ -137,7 +137,7 @@ export default function AdminPanel({
         price: parseInt(productForm.price),
         quantity: productForm.quantity || '500 g',
         badge: productForm.badge || 'New',
-        description: productForm.description || 'Premium healthy organic millet blend.',
+        description: productForm.description || 'Premium healthy natural millet blend.',
         image: productForm.image,
         rating: 4.8,
         reviewsCount: 1,
@@ -616,7 +616,7 @@ export default function AdminPanel({
               <h3 className="text-2xl font-outfit font-black text-textDark dark:text-cream">
                 {editingProduct ? 'Edit Catalog Product' : 'Add Brand New Product'}
               </h3>
-              <p className="text-xs text-textLight dark:text-cream/50 mt-1">Configure organic grain categories, pricing models, and specific nutrition facts.</p>
+              <p className="text-xs text-textLight dark:text-cream/50 mt-1">Configure natural grain categories, pricing models, and specific nutrition facts.</p>
             </div>
 
             <form onSubmit={productForm ? handleProductSubmit : undefined} className="space-y-4">

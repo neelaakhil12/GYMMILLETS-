@@ -38,7 +38,7 @@ export default function OrderTrackingView({ activeOrder, setActiveView }) {
   const milestones = [
     { key: 'placed', label: 'Order Placed', time: 'Just Now', desc: 'We received your healthy millet request.' },
     { key: 'confirmed', label: 'Order Confirmed', time: '1 min ago', desc: 'GymMillets kitchen accepted your order.' },
-    { key: 'preparing', label: 'Preparing', time: 'Active', desc: 'Crafting in our clean organic kitchen.' },
+    { key: 'preparing', label: 'Preparing', time: 'Active', desc: 'Crafting in our clean natural kitchen.' },
     { key: 'out_for_delivery', label: 'Out for Delivery', time: 'Pending', desc: 'Millet courier executive has picked up.' },
     { key: 'delivered', label: 'Delivered', time: 'Pending', desc: 'Delivered hot & fresh to your home.' }
   ];

@@ -140,7 +140,7 @@ export default function QuickViewModal({
             {product.variants && product.variants.length > 0 && (
               <div className="space-y-2">
                 <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40 block">
-                  Select Organic Millet Grain Type:
+                  Select Natural Millet Grain Type:
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {product.variants.map((variant) => (

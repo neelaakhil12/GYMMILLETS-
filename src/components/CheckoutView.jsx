@@ -408,7 +408,7 @@ export default function CheckoutView({
                 <div className="pt-4">
                   <div className="flex items-center gap-2 p-3 bg-success/15 rounded-2xl text-success border border-success/30 mb-6">
                     <ShieldCheck size={18} />
-                    <span className="text-xs font-bold">Safe and Secure SSL checkout. 100% natural organic food guarantee.</span>
+                    <span className="text-xs font-bold">Safe and Secure SSL checkout. 100% pure natural food guarantee.</span>
                   </div>
 
                   <button

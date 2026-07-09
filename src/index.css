@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply font-sans bg-cream text-textDark transition-colors duration-300 antialiased overflow-x-hidden;
+    @apply font-sans bg-white text-textDark transition-colors duration-300 antialiased overflow-x-hidden;
   }
   
   #root {
@@ -32,7 +32,7 @@
 
 /* Custom premium styles */
 .glassmorphism-nav {
-  background: rgba(248, 245, 240, 0.8);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(139, 94, 60, 0.08);
@@ -66,7 +66,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #F8F5F0;
+  background: #ffffff;
 }
 
 .dark ::-webkit-scrollbar-track {

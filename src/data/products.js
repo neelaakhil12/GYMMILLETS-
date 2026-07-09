@@ -1,7 +1,7 @@
 export const PRODUCT_CATEGORIES = [
   "Ready Mix",
   "Instant Mix",
-  "Powders",
+  "Freeze Dried Powders",
   "Noodles",
   "Soups",
   "Hot Meal"
@@ -29,7 +29,7 @@ export const PRODUCTS = [
     rating: 4.8,
     reviewsCount: 340,
     image: "/kichdi-premix.png",
-    description: "A nourishing, low-glycemic, and fiber-rich ready-to-cook meal made with the finest organic millets and roasted lentils. Perfect for a quick, gut-friendly breakfast or dinner.",
+    description: "A nourishing, low-glycemic, and fiber-rich ready-to-cook meal made with the finest natural millets and roasted lentils. Perfect for a quick, gut-friendly breakfast or dinner.",
     badge: "Best Seller",
     nutrition: { protein: "12g", fiber: "8.5g", carbs: "62g", fat: "2.1g" }
   },
@@ -101,7 +101,7 @@ export const PRODUCTS = [
     rating: 4.6,
     reviewsCount: 194,
     image: "/upma-mix.png",
-    description: "A traditional wholesome South Indian breakfast enriched with toasted millets, curry leaves, mustard seeds, and premium organic spices. Just add hot water!",
+    description: "A traditional wholesome South Indian breakfast enriched with toasted millets, curry leaves, mustard seeds, and premium natural spices. Just add hot water!",
     badge: "Best Seller",
     nutrition: { protein: "13g", fiber: "10.1g", carbs: "59g", fat: "2.5g" }
   },
@@ -110,7 +110,7 @@ export const PRODUCTS = [
   {
     id: "pw-chutney",
     name: "Chutney Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 80,
     quantity: "50 g",
     variants: [],
@@ -124,21 +124,21 @@ export const PRODUCTS = [
   {
     id: "pw-rasam",
     name: "Rasam Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 80,
     quantity: "50 g",
     variants: [],
     rating: 4.7,
     reviewsCount: 120,
     image: "/rasam-powder.png",
-    description: "Highly aromatic, traditional South Indian soup spices powder. Formulated with black pepper, cumin, coriander, and organic turmeric to boost immunity.",
+    description: "Highly aromatic, traditional South Indian soup spices powder. Formulated with black pepper, cumin, coriander, and natural turmeric to boost immunity.",
     badge: "Immunity Booster",
     nutrition: { protein: "8.5g", fiber: "16g", carbs: "45g", fat: "4.2g" }
   },
   {
     id: "pw-sambar",
     name: "Sambar Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 80,
     quantity: "50 g",
     variants: [],
@@ -152,7 +152,7 @@ export const PRODUCTS = [
   {
     id: "pw-karam",
     name: "Karam Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 80,
     quantity: "50 g",
     variants: [],
@@ -166,7 +166,7 @@ export const PRODUCTS = [
   {
     id: "pw-sprout",
     name: "Sprout Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 80,
     quantity: "50 g",
     variants: [],
@@ -180,21 +180,21 @@ export const PRODUCTS = [
   {
     id: "pw-beetroot",
     name: "Beetroot Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 120,
     quantity: "100 g",
     variants: [],
     rating: 4.7,
     reviewsCount: 88,
     image: "/beetroot-powder.png",
-    description: "100% natural, dehydrated organic beetroot powder. Rich in nitrates, increases oxygen intake, and serves as a natural pre-workout booster and colorant.",
+    description: "100% pure, dehydrated natural beetroot powder. Rich in nitrates, increases oxygen intake, and serves as a natural pre-workout booster and colorant.",
     badge: "Pre-Workout",
     nutrition: { protein: "10g", fiber: "11g", carbs: "70g", fat: "0.5g" }
   },
   {
     id: "pw-onion",
     name: "Onion Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 110,
     quantity: "100 g",
     variants: [],
@@ -208,7 +208,7 @@ export const PRODUCTS = [
   {
     id: "pw-amla",
     name: "Amla Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 130,
     quantity: "100 g",
     variants: [],
@@ -222,7 +222,7 @@ export const PRODUCTS = [
   {
     id: "pw-mango",
     name: "Mango Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 95,
     quantity: "100 g",
     variants: [],
@@ -236,7 +236,7 @@ export const PRODUCTS = [
   {
     id: "pw-tomato",
     name: "Tomato Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 110,
     quantity: "100 g",
     variants: [],
@@ -250,7 +250,7 @@ export const PRODUCTS = [
   {
     id: "pw-potato",
     name: "Potato Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 90,
     quantity: "100 g",
     variants: [],
@@ -264,7 +264,7 @@ export const PRODUCTS = [
   {
     id: "pw-jackfruit",
     name: "Jackfruit Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 140,
     quantity: "100 g",
     variants: [],
@@ -278,7 +278,7 @@ export const PRODUCTS = [
   {
     id: "pw-banana-flower",
     name: "Banana Flower Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 150,
     quantity: "100 g",
     variants: [],
@@ -292,7 +292,7 @@ export const PRODUCTS = [
   {
     id: "pw-ginger",
     name: "Ginger Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 120,
     quantity: "100 g",
     variants: [],
@@ -306,7 +306,7 @@ export const PRODUCTS = [
   {
     id: "pw-garlic",
     name: "Garlic Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 110,
     quantity: "100 g",
     variants: [],
@@ -320,30 +320,282 @@ export const PRODUCTS = [
   {
     id: "pw-mint",
     name: "Mint Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 95,
     quantity: "100 g",
     variants: [],
     rating: 4.7,
     reviewsCount: 81,
     image: "/mint-powder.png",
-    description: "Extremely refreshing dehydrated organic mint leaves powder. Enhances cooling raitas, spiced buttermilk, biryanis, lemonades, and marinades.",
+    description: "Extremely refreshing dehydrated natural mint leaves powder. Enhances cooling raitas, spiced buttermilk, biryanis, lemonades, and marinades.",
     badge: "Cooling & Fresh",
     nutrition: { protein: "3.8g", fiber: "12g", carbs: "52g", fat: "0.6g" }
   },
   {
     id: "pw-moringa",
     name: "Moringa Powder",
-    category: "Powders",
+    category: "Freeze Dried Powders",
     price: 135,
     quantity: "100 g",
     variants: [],
     rating: 4.9,
     reviewsCount: 265,
     image: "/moringa-powder.png",
-    description: "A nutrient-packed green superfood powder milled from shade-dried organic Moringa leaves. Rich in iron, calcium, amino acids, and multivitamins.",
+    description: "A nutrient-packed green superfood powder milled from shade-dried natural Moringa leaves. Rich in iron, calcium, amino acids, and multivitamins.",
     badge: "Superfood Green",
     nutrition: { protein: "27g", fiber: "19.2g", carbs: "38g", fat: "2.3g" }
+  },
+  {
+    id: "pw-bootroot",
+    name: "Bootroot Powder",
+    category: "Freeze Dried Powders",
+    price: 120,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.8,
+    reviewsCount: 94,
+    image: "/bootroot-powder.png",
+    description: "Dehydrated premium beetroots, exceptional pre-workout nitrate source for explosive pumps.",
+    badge: "Nitrate Rich",
+    nutrition: { protein: "10g", fiber: "11g", carbs: "70g", fat: "0.5g" }
+  },
+  {
+    id: "pw-gongura",
+    name: "Gongura Powder",
+    category: "Freeze Dried Powders",
+    price: 90,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.7,
+    reviewsCount: 76,
+    image: "/gongura-powder.png",
+    description: "High iron and calcium sour greens powder. Rich in vitamin C and active antioxidants.",
+    badge: "Iron Rich",
+    nutrition: { protein: "8g", fiber: "14g", carbs: "55g", fat: "0.8g" }
+  },
+  {
+    id: "pw-menthi",
+    name: "Menthi Powder",
+    category: "Freeze Dried Powders",
+    price: 85,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.6,
+    reviewsCount: 88,
+    image: "/menthi-powder.png",
+    description: "Traditional fenugreek seeds powder. Effectively controls blood sugar levels and improves digestion.",
+    badge: "Sugar Control",
+    nutrition: { protein: "23g", fiber: "24g", carbs: "48g", fat: "6.4g" }
+  },
+  {
+    id: "pw-ponaganti",
+    name: "Ponaganti Powder",
+    category: "Freeze Dried Powders",
+    price: 95,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.8,
+    reviewsCount: 62,
+    image: "/ponaganti-powder.png",
+    description: "Traditional green leaf powder, exceptional for eye health and cooling the body during heat.",
+    badge: "Eye Health",
+    nutrition: { protein: "11g", fiber: "12g", carbs: "45g", fat: "0.6g" }
+  },
+  {
+    id: "pw-curry-leaves",
+    name: "Curry Leaves Powder",
+    category: "Freeze Dried Powders",
+    price: 85,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.9,
+    reviewsCount: 145,
+    image: "/curry-leaves-powder.png",
+    description: "Nutrient-dense seasoning powder, boosts hair health, scalp nutrition, and naturally improves iron levels.",
+    badge: "Hair & Skin",
+    nutrition: { protein: "12g", fiber: "15g", carbs: "42g", fat: "1.0g" }
+  },
+  {
+    id: "pw-yevallu",
+    name: "Yevallu Powder",
+    category: "Freeze Dried Powders",
+    price: 110,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.5,
+    reviewsCount: 52,
+    image: "/yevallu-powder.png",
+    description: "Premium barley powder. Superb detox agent, helps flush toxins and aids clean weight management.",
+    badge: "Weight Loss",
+    nutrition: { protein: "12g", fiber: "17g", carbs: "73g", fat: "1.2g" }
+  },
+  {
+    id: "pw-ulvacharu",
+    name: "Ulvacharu Powder",
+    category: "Freeze Dried Powders",
+    price: 115,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.8,
+    reviewsCount: 118,
+    image: "/ulvacharu-powder.png",
+    description: "Horse gram soup mix powder. Extremely high in protein, acts as an active fat-burner and muscle toner.",
+    badge: "High Protein",
+    nutrition: { protein: "22g", fiber: "12g", carbs: "57g", fat: "0.5g" }
+  },
+  {
+    id: "pw-flax-seeds",
+    name: "Flax Seeds Powder",
+    category: "Freeze Dried Powders",
+    price: 130,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.7,
+    reviewsCount: 139,
+    image: "/flax-seeds-powder.png",
+    description: "Dehydrated roasted flax seeds. Loaded with Omega-3 fatty acids for premium heart and joint health.",
+    badge: "Omega-3 Rich",
+    nutrition: { protein: "18g", fiber: "27g", carbs: "29g", fat: "42g" }
+  },
+  {
+    id: "pw-menthula",
+    name: "Menthula Powder",
+    category: "Freeze Dried Powders",
+    price: 85,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.7,
+    reviewsCount: 71,
+    image: "/menthula-powder.png",
+    description: "Dehydrated fenugreek leaves (kasuri methi) powder. Highly aromatic spice that boosts digestion.",
+    badge: "Digestion Aid",
+    nutrition: { protein: "23g", fiber: "25g", carbs: "44g", fat: "6.0g" }
+  },
+  {
+    id: "pw-red-chilli",
+    name: "Red Chilli Powder",
+    category: "Freeze Dried Powders",
+    price: 80,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.6,
+    reviewsCount: 104,
+    image: "/red-chilli-powder.png",
+    description: "Premium stone-ground spicy Guntur red chillies for an essential metabolic boost.",
+    badge: "Metabolism",
+    nutrition: { protein: "12g", fiber: "34g", carbs: "32g", fat: "14g" }
+  },
+  {
+    id: "pw-pasupu",
+    name: "Pasupu Powder",
+    category: "Freeze Dried Powders",
+    price: 90,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.9,
+    reviewsCount: 182,
+    image: "/pasupu-powder.png",
+    description: "Premium turmeric powder with exceptionally high curcumin content, acting as a powerful anti-inflammatory.",
+    badge: "Curcumin Active",
+    nutrition: { protein: "8g", fiber: "21g", carbs: "65g", fat: "3.0g" }
+  },
+  {
+    id: "pw-saindhava-lavanam",
+    name: "Saindhava Lavanam",
+    category: "Freeze Dried Powders",
+    price: 75,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.8,
+    reviewsCount: 110,
+    image: "/saindhava-lavanam.png",
+    description: "Pure pink rock salt powder, loaded with 84 trace minerals to help regulate natural hydration.",
+    badge: "Trace Minerals",
+    nutrition: { protein: "0g", fiber: "0g", carbs: "0g", fat: "0g" }
+  },
+  {
+    id: "pw-dhaniya",
+    name: "Dhaniya Powder",
+    category: "Freeze Dried Powders",
+    price: 85,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.7,
+    reviewsCount: 93,
+    image: "/dhaniya-powder.png",
+    description: "High-quality coriander seed powder, improves digestion and supports general cardiovascular health.",
+    badge: "Heart Health",
+    nutrition: { protein: "12g", fiber: "41g", carbs: "55g", fat: "17g" }
+  },
+  {
+    id: "pw-banana",
+    name: "Banana Powder",
+    category: "Freeze Dried Powders",
+    price: 140,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.8,
+    reviewsCount: 84,
+    image: "/banana-powder.png",
+    description: "Dehydrated raw green banana powder, full of resistant starch to feed the gut microbiome.",
+    badge: "Gut Friendly",
+    nutrition: { protein: "4g", fiber: "10g", carbs: "80g", fat: "0.5g" }
+  },
+  {
+    id: "pw-coconut",
+    name: "Coconut Powder",
+    category: "Freeze Dried Powders",
+    price: 95,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.8,
+    reviewsCount: 122,
+    image: "/coconut-powder.png",
+    description: "Grated dehydrated coconut powder, excellent source of MCT fats for instant clean athletic energy.",
+    badge: "MCT Energy",
+    nutrition: { protein: "7g", fiber: "16g", carbs: "24g", fat: "65g" }
+  },
+  {
+    id: "pw-yelakkaya",
+    name: "Yelakkaya Powder",
+    category: "Freeze Dried Powders",
+    price: 250,
+    quantity: "50 g",
+    variants: [],
+    rating: 4.9,
+    reviewsCount: 198,
+    image: "/yelakkaya-powder.png",
+    description: "Pure premium green cardamom powder, incredible natural mouth freshener and stress reliever.",
+    badge: "Premium Spice",
+    nutrition: { protein: "11g", fiber: "28g", carbs: "68g", fat: "7g" }
+  },
+  {
+    id: "pw-tamarind",
+    name: "Tamarind Powder",
+    category: "Freeze Dried Powders",
+    price: 90,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.6,
+    reviewsCount: 67,
+    image: "/tamarind-powder.png",
+    description: "Tangy dehydrated raw tamarind powder, packed with natural tartaric acid to aid gut motility.",
+    badge: "Tangy & Sour",
+    nutrition: { protein: "3g", fiber: "5g", carbs: "62g", fat: "0.6g" }
+  },
+  {
+    id: "pw-jilakara",
+    name: "Jilakara Powder",
+    category: "Freeze Dried Powders",
+    price: 95,
+    quantity: "100 g",
+    variants: [],
+    rating: 4.8,
+    reviewsCount: 140,
+    image: "/jilakara-powder.png",
+    description: "Roasted cumin seed powder, outstanding digestive aid and metabolic performance booster.",
+    badge: "Digestive Boost",
+    nutrition: { protein: "18g", fiber: "10g", carbs: "44g", fat: "22g" }
   },
 
   // --- INSTANT MIX CATEGORY ---
@@ -375,7 +627,7 @@ export const PRODUCTS = [
     rating: 4.7,
     reviewsCount: 142,
     image: "/rawa-dosa-mixture.png",
-    description: "Prepare paper-thin, laced, crispy rava dosas within minutes. Made from stone-ground millets, black pepper, ginger extracts, and organic herbs.",
+    description: "Prepare paper-thin, laced, crispy rava dosas within minutes. Made from stone-ground millets, black pepper, ginger extracts, and natural herbs.",
     badge: "Crispy Lace",
     nutrition: { protein: "11g", fiber: "8.2g", carbs: "65g", fat: "2.1g" }
   },
@@ -431,7 +683,7 @@ export const PRODUCTS = [
     rating: 4.8,
     reviewsCount: 142,
     image: "/mixed-veg-pulao.png",
-    description: "A steaming hot, healthy organic millet pulao loaded with fresh garden vegetables and mild spices.",
+    description: "A steaming hot, healthy natural millet pulao loaded with fresh garden vegetables and mild spices.",
     badge: "Veg Special",
     nutrition: { protein: "12g", fiber: "9g", carbs: "60g", fat: "3.2g" }
   },
@@ -459,7 +711,7 @@ export const PRODUCTS = [
     rating: 4.6,
     reviewsCount: 110,
     image: "/jeera-millet-meal.png",
-    description: "Light and flavorful organic cumin-infused millet meal, cooked to fluffy perfection with a touch of ghee.",
+    description: "Light and flavorful natural cumin-infused millet meal, cooked to fluffy perfection with a touch of ghee.",
     badge: "Digestive Aid",
     nutrition: { protein: "11.0g", fiber: "8.8g", carbs: "62g", fat: "3.5g" }
   },
@@ -473,7 +725,7 @@ export const PRODUCTS = [
     rating: 4.7,
     reviewsCount: 88,
     image: "/coconut-millet-meal.png",
-    description: "Rich, nutty, and satisfying millet meal cooked with fresh grated organic coconut and tempered mustard seeds.",
+    description: "Rich, nutty, and satisfying millet meal cooked with fresh grated natural coconut and tempered mustard seeds.",
     badge: "Rich & Nutty",
     nutrition: { protein: "10.8g", fiber: "10.2g", carbs: "55g", fat: "5.8g" }
   },
@@ -543,7 +795,7 @@ export const PRODUCTS = [
     rating: 4.9,
     reviewsCount: 168,
     image: "/mutton-kheema-pulao.png",
-    description: "Rich, aromatic millet pulao cooked with minced, spiced organic mutton (kheema). A gourmet protein powerhouse.",
+    description: "Rich, aromatic millet pulao cooked with minced, spiced natural mutton (kheema). A gourmet protein powerhouse.",
     badge: "Chef Special",
     nutrition: { protein: "28g", fiber: "8.5g", carbs: "50g", fat: "7.2g" }
   },
@@ -557,7 +809,7 @@ export const PRODUCTS = [
     rating: 4.8,
     reviewsCount: 215,
     image: "/chicken-pulao.png",
-    description: "Flavourful and delicious non-veg pulao cooked with tender chicken pieces and organic millets.",
+    description: "Flavourful and delicious non-veg pulao cooked with tender chicken pieces and natural millets.",
     badge: "Gym Favourite",
     nutrition: { protein: "26g", fiber: "8.0g", carbs: "52g", fat: "5.8g" }
   },
@@ -594,11 +846,11 @@ export const PRODUCTS = [
 export const TESTIMONIALS = [
   {
     id: 1,
-    name: "Aditya Verma",
-    role: "CrossFit Athlete & Coach",
+    name: "Karan Wadhwa",
+    role: "Certified Personal Trainer",
     rating: 5,
     image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop",
-    review: "GymMillets has completely changed my pre-workout nutrition game! The Beetroot Powder gives me a clean nitric oxide boost, and the Millet Noodles are the perfect high-protein post-workout meal. Best organic brand in India!"
+    review: "GymMillets has completely changed my pre-workout nutrition game! The Beetroot Powder gives me a clean nitric oxide boost, and the Millet Noodles are the perfect high-protein post-workout meal. Best natural brand in India!"
   },
   {
     id: 2,
@@ -623,12 +875,60 @@ export const TESTIMONIALS = [
     rating: 5,
     image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop",
     review: "The Moringa Powder and Sprout Powder from GymMillets are my absolute staples for morning smoothies. They blend perfectly, taste super fresh, and keep me energized throughout my back-to-back yoga sessions. 10/10!"
+  },
+  {
+    id: 5,
+    name: "Ananya Verma",
+    role: "Marathon Runner",
+    rating: 5,
+    image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200&auto=format&fit=crop",
+    review: "Eating Beetroot Powder pre-run has significantly improved my stamina and oxygen levels during races. Highly recommend GymMillets' purity and clean ingredients!"
+  },
+  {
+    id: 6,
+    name: "Vikram Rathore",
+    role: "Powerlifter",
+    rating: 5,
+    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop",
+    review: "Karam Powder with hot millet upma and ghee is my go-to high-calorie, healthy mass building breakfast. Absolutely delicious taste and packs a serious kick!"
+  },
+  {
+    id: 7,
+    name: "Sneha Reddy",
+    role: "Fitness Coach",
+    rating: 5,
+    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop",
+    review: "Clean eating has never been this simple. GymMillets ready mixes have zero preservatives and take minutes to prepare. A lifesaver for busy clients on strict meal preps."
+  },
+  {
+    id: 8,
+    name: "Amit Sharma",
+    role: "Weight Loss Success Story",
+    rating: 5,
+    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=200&auto=format&fit=crop",
+    review: "Replaced my standard morning oats with GymMillets Kichdi Premix and lost 8kgs in 3 months! Keeps me full and energised for hours without sugar spikes."
+  },
+  {
+    id: 9,
+    name: "Meera Krishnan",
+    role: "Active Mother of Two",
+    rating: 5,
+    image: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?q=80&w=200&auto=format&fit=crop",
+    review: "My kids absolutely love the Millet Noodles, and I love that they are getting 100% natural, protein-rich grains without any harmful chemical preservatives or MSG."
+  },
+  {
+    id: 10,
+    name: "Rohan Joshi",
+    role: "Competitive Bodybuilder",
+    rating: 5,
+    image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=200&auto=format&fit=crop",
+    review: "Sprout Powder gives me 22g of clean protein per serving. It's the ultimate natural post-workout alternative to whey supplements that actually supports my digestion."
   }
 ];
 
 export const COUPONS = [
   { code: "MILLETLIFE10", discount: 10, minPurchase: 500, description: "Get 10% OFF on purchases above ₹500" },
-  { code: "ORGANIC20", discount: 20, minPurchase: 1000, description: "Get 20% OFF on purchases above ₹1,000" },
+  { code: "NATURAL20", discount: 20, minPurchase: 1000, description: "Get 20% OFF on purchases above ₹1,000" },
   { code: "GYMPOWER30", discount: 30, minPurchase: 1500, description: "Fitness Special: Get 30% OFF on purchases above ₹1,500" },
   { code: "FIRSTFIT", discount: 15, minPurchase: 0, description: "Welcome Coupon: Get 15% OFF on your first purchase!" }
 ];
@@ -636,8 +936,8 @@ export const COUPONS = [
 export const WHY_CHOOSE_US = [
   {
     id: 1,
-    title: "Organic Ingredients",
-    description: "Sourced directly from certified organic farms, ensuring pesticide-free, pure grain goodness.",
+    title: "Natural Ingredients",
+    description: "Sourced directly from certified natural farms, ensuring pesticide-free, pure grain goodness.",
     icon: "Leaf"
   },
   {
@@ -655,13 +955,13 @@ export const WHY_CHOOSE_US = [
   {
     id: 4,
     title: "Traditional Recipes",
-    description: "Crafted with age-old recipes to retain authentic local flavor and maximum organic nutrition.",
+    description: "Crafted with age-old recipes to retain authentic local flavor and maximum natural nutrition.",
     icon: "CookingPot"
   },
   {
     id: 5,
     title: "Fast Delivery",
-    description: "Ultra-fast packaging and logistics pipeline, delivering fresh organic nutrition to your doorstep.",
+    description: "Ultra-fast packaging and logistics pipeline, delivering fresh natural nutrition to your doorstep.",
     icon: "Truck"
   },
   {
