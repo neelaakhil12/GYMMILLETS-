@@ -58,7 +58,8 @@ export default function AdminLogin({ onLogin, onBack }) {
     setError('');
     setLoading(true);
     setTimeout(() => {
-      if (form.email.trim().toLowerCase() === ADMIN_EMAIL && form.password === adminPassword) {
+      const emailLower = form.email.trim().toLowerCase();
+      if ((emailLower === 'admin@gymmillets.com' || emailLower === 'aarunika555@gmail.com') && form.password === adminPassword) {
         onLogin();
       } else {
         setAttempts(a => a + 1);
