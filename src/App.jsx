@@ -182,6 +182,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('gym_millet_wishlist', JSON.stringify(wishlist));
   }, [wishlist]);
+
+  useEffect(() => {
+    localStorage.setItem('isAdminAuthenticated', isAdminAuthenticated ? 'true' : 'false');
+  }, [isAdminAuthenticated]);
   
   // Modals & Popups
   const [showSplash, setShowSplash] = useState(true);
@@ -1304,7 +1308,7 @@ export default function App() {
               onAdminLogout={() => {
                 setIsAdminAuthenticated(false);
                 addToast('Logged out of Admin Panel.', 'info');
-                setActiveView('home');
+                setActiveView('admin');
               }}
             />
           )
