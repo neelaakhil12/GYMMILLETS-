@@ -4,6 +4,25 @@ import nodemailer from 'nodemailer';
 import cors from 'cors';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ADMIN_CONFIG_PATH = path.join(__dirname, 'admin_config.json');
+
+// Load or init admin config
+function loadAdminConfig() {
+  try {
+    return JSON.parse(fs.readFileSync(ADMIN_CONFIG_PATH, 'utf8'));
+  } catch {
+    return { password: 'GymAdmin@2026' };
+  }
+}
+
+function saveAdminConfig(config) {
+  fs.writeFileSync(ADMIN_CONFIG_PATH, JSON.stringify(config, null, 2));
+}
 
 const app = express();
 app.use(cors());
@@ -94,77 +113,96 @@ app.post('/api/verify-otp', (req, res) => {
   res.json({ success: true });
 });
 
-// ─── ADMIN PASSWORD RECOVERY (SMTP) ──────────────────────────────────────────
-const adminOtpStore = new Map();
+// ─── ADMIN PASSWORD RESET (Email Link) ───────────────────────────────────────
+const resetTokenStore = new Map(); // token → { expiresAt }
 
+// Get current admin password
+app.get('/api/admin/get-password', (req, res) => {
+  const config = loadAdminConfig();
+  res.json({ password: config.password });
+});
+
+// Send password reset link to aarunika555@gmail.com
 app.post('/api/admin/forgot-password', async (req, res) => {
-  const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
-  }
+  const { email, siteUrl } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
 
   const normalized = email.trim().toLowerCase();
   if (normalized !== 'admin@gymmillets.com' && normalized !== 'aarunika555@gmail.com') {
     return res.status(400).json({ error: 'Invalid admin email address' });
   }
 
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
-  adminOtpStore.set(normalized, { code, expiresAt });
+  // Generate a secure random token
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+  resetTokenStore.set(token, { expiresAt });
+
+  const base = (siteUrl || 'http://localhost:5173').replace(/\/$/, '');
+  const resetLink = `${base}/adminlogin?reset_token=${token}`;
 
   const mailOptions = {
     from: process.env.SMTP_FROM || `"GymMillets Admin" <${process.env.SMTP_USER}>`,
-    to: 'aarunika555@gmail.com', // Always forward the authentication code to aarunika555@gmail.com
-    subject: 'GymMillets Admin Password Recovery OTP',
+    to: 'aarunika555@gmail.com',
+    subject: 'GymMillets Admin – Password Reset Link',
     html: `
-      <div style="font-family: Arial, sans-serif; padding: 25px; color: #333; max-width: 500px; margin: auto; border: 1px solid #e2e8f0; border-radius: 16px; background: #0c0d12; color: #f3f4f6;">
-        <h2 style="color: #4caf50; text-align: center; font-size: 24px; margin-bottom: 20px;">GymMillets Admin Security</h2>
-        <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">Hello Admin,</p>
-        <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">A request was made to verify your identity to access the GymMillets Admin Control Panel. Use the following security code to authenticate:</p>
-        <div style="font-size: 32px; font-weight: bold; background: rgba(76,175,80,0.1); border: 1px solid rgba(76,175,80,0.25); color: #4caf50; padding: 18px; text-align: center; border-radius: 12px; margin: 25px 0; letter-spacing: 6px; font-family: monospace;">
-          ${code}
+      <div style="font-family: Arial, sans-serif; max-width: 520px; margin: auto; padding: 30px; border-radius: 16px; background: #0c0d12; border: 1px solid #1e2330;">
+        <h2 style="color: #4caf50; text-align: center; margin-bottom: 8px;">GymMillets Admin</h2>
+        <p style="text-align:center; color:#64748b; font-size:11px; margin-bottom:28px; letter-spacing:2px; text-transform:uppercase;">Password Reset Request</p>
+        <p style="color: #cbd5e1; font-size: 14px; line-height: 1.7;">Hello Admin,</p>
+        <p style="color: #94a3b8; font-size: 14px; line-height: 1.7;">You requested a password reset for the GymMillets Admin Panel. Click the button below to set a new password. This link expires in <strong style="color:#f59e0b;">15 minutes</strong>.</p>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${resetLink}" style="display:inline-block; background: linear-gradient(135deg,#5a8f5c,#4caf50); color: #fff; text-decoration: none; font-weight: bold; font-size: 15px; padding: 14px 36px; border-radius: 12px; box-shadow: 0 0 24px rgba(76,175,80,0.35);">
+            🔑 Reset My Password
+          </a>
         </div>
-        <p style="font-size: 13px; color: #94a3b8; line-height: 1.5;">This security verification code is valid for 10 minutes. If you did not request this code, please check your admin security credentials immediately.</p>
-        <br/>
-        <p style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; font-size: 11px; color: #64748b; text-align: center;">
-          GymMillets Security HQ • Restricted Access
-        </p>
+        <p style="color: #64748b; font-size: 12px; line-height: 1.6;">If the button doesn't work, copy and paste this link in your browser:</p>
+        <p style="color: #4caf50; font-size: 11px; word-break: break-all;">${resetLink}</p>
+        <hr style="border-color: #1e2330; margin: 24px 0;"/>
+        <p style="color: #334155; font-size: 10px; text-align: center;">If you did not request this reset, ignore this email. Your password remains unchanged.</p>
       </div>
     `
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    res.json({ success: true, message: 'OTP sent to aarunika555@gmail.com' });
-  } catch (error) {
-    console.error('Nodemailer error for admin recovery:', error);
-    res.status(500).json({ error: 'Failed to send verification email: ' + error.message });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Reset email error:', err);
+    res.status(500).json({ error: 'Failed to send reset email: ' + err.message });
   }
 });
 
-app.post('/api/admin/verify-otp', (req, res) => {
-  const { email, otp } = req.body;
-  if (!email || !otp) {
-    return res.status(400).json({ error: 'Email and OTP code are required' });
+// Validate a reset token (frontend calls this to check token before showing form)
+app.get('/api/admin/validate-reset-token', (req, res) => {
+  const { token } = req.query;
+  const stored = resetTokenStore.get(token);
+  if (!stored || Date.now() > stored.expiresAt) {
+    return res.status(400).json({ valid: false, error: 'Reset link is invalid or has expired.' });
+  }
+  res.json({ valid: true });
+});
+
+// Save the new password
+app.post('/api/admin/reset-password', (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: 'Token and new password are required' });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
 
-  const normalized = email.trim().toLowerCase();
-  const stored = adminOtpStore.get(normalized);
-  if (!stored) {
-    return res.status(400).json({ error: 'No OTP requested for this admin email' });
+  const stored = resetTokenStore.get(token);
+  if (!stored || Date.now() > stored.expiresAt) {
+    return res.status(400).json({ error: 'Reset link is invalid or has expired.' });
   }
 
-  if (Date.now() > stored.expiresAt) {
-    adminOtpStore.delete(normalized);
-    return res.status(400).json({ error: 'Verification code has expired' });
-  }
+  // Save new password
+  const config = loadAdminConfig();
+  config.password = newPassword;
+  saveAdminConfig(config);
+  resetTokenStore.delete(token);
 
-  if (stored.code !== otp.trim()) {
-    return res.status(400).json({ error: 'Invalid verification code' });
-  }
-
-  // Success! Clear OTP
-  adminOtpStore.delete(normalized);
   res.json({ success: true });
 });
 

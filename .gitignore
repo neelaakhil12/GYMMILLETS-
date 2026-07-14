@@ -30,3 +30,6 @@ dist-ssr
 .env
 .env.local
 .env.production
+
+# Admin password config (stored locally on server)
+admin_config.json
