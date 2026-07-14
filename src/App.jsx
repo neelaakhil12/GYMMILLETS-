@@ -3,6 +3,13 @@ import AOS from 'aos';
 
 // Importing Data & Sub-components
 import { PRODUCTS, TESTIMONIALS, WHY_CHOOSE_US, COUPONS } from './data/products';
+
+// Supabase DB helpers
+import {
+  dbLoadProducts, dbAddProduct, dbUpdateProduct, dbDeleteProduct,
+  dbLoadOrders, dbSaveOrder, dbUpdateOrderStatus, dbUpdateOrderShippingDetails,
+  dbLoadCoupons, dbAddCoupon, dbDeleteCoupon
+} from './hooks/useSupabase';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ProductCard from './components/ProductCard';
@@ -11,19 +18,23 @@ import QuickViewModal from './components/QuickViewModal';
 import CheckoutView from './components/CheckoutView';
 import OrderTrackingView from './components/OrderTrackingView';
 import AdminPanel from './components/AdminPanel';
+import AdminLogin from './components/AdminLogin';
 import AiRecommendations from './components/AiRecommendations';
 import Testimonials from './components/Testimonials';
 import WhyChooseUs from './components/WhyChooseUs';
+import Splash from './components/Splash';
+import UserAccount from './components/UserAccount';
 import Footer from './components/Footer';
 import Toast from './components/Toast';
 import AnimatedCounter from './components/AnimatedCounter';
+import { supabase } from './lib/supabase';
 
 // Importing Icons for UI
 import {
   Search, Heart, ShoppingBag, ArrowRight, Settings, Filter,
   Phone, Shield, User, KeyRound, ShoppingCart, Sun, Moon,
   MapPin, Mail, CookingPot, Soup, Flame, Zap, Sparkles,
-  Target, Eye, Compass, Users, Award
+  Target, Eye, Compass, Users, Award, Loader
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -81,31 +92,123 @@ const CATEGORIES = [
 export default function App() {
   // --- STATE ---
   const [products, setProducts] = useState(PRODUCTS);
-  const [cartItems, setCartItems] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
-  const [activeView, setActiveView] = useState('home'); // home | shop | wishlist | order-tracking | admin | checkout
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const stored = localStorage.getItem('gym_millet_cart');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      const stored = localStorage.getItem('gym_millet_wishlist');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [activeView, setActiveView] = useState(() => {
+    const path = window.location.pathname;
+    if (path === '/admin' || path === '/adminlogin') return 'admin';
+    if (path === '/shop') return 'shop';
+    if (path === '/wishlist') return 'wishlist';
+    if (path === '/cart') return 'cart';
+    if (path === '/about') return 'about';
+    if (path === '/contact') return 'contact';
+    return 'home';
+  });
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [darkMode, setDarkMode] = useState(false);
 
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+  // dbCoupons: live coupons from Supabase (falls back to static COUPONS when empty)
+  const [dbCoupons, setDbCoupons] = useState(COUPONS);
+  // Admin auth + managed categories
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
+    return localStorage.getItem('isAdminAuthenticated') === 'true';
+  });
+  const [managedCategories, setManagedCategories] = useState(() => {
+    const saved = localStorage.getItem('managedCategories');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback to defaults
+      }
+    }
+    return [
+      { name: 'Ready Mix', image: '/cat-ready-mix.png' },
+      { name: 'Instant Mix', image: '/cat-instant-mix.png' },
+      { name: 'Freeze Dried Powders', image: '/cat-powders.png' },
+      { name: 'Noodles', image: '/cat-noodles.png' },
+      { name: 'Soups', image: '/cat-soups.png' },
+      { name: 'Hot Meal', image: '/cat-hot-meals.png' }
+    ];
+  });
+
+  const [heroSlides, setHeroSlides] = useState(() => {
+    const saved = localStorage.getItem('heroSlides');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return [
+      { name: "", image: "/millet-mix.png", alt: "Natural Multi Millet Mix" },
+      { name: "Sorghum (Jowar)", image: "/sorghum-jowar.png", alt: "Sorghum Jowar" },
+      { name: "Pearl Millet", image: "/pearl-millet.png", alt: "Pearl Millet" },
+      { name: "Finger Millet", image: "/finger-millet.png", alt: "Finger Millet" },
+      { name: "Foxtail Millet", image: "/foxtail-millet.png", alt: "Foxtail Millet" },
+      { name: "Little Millet", image: "/little-millet.png", alt: "Little Millet" }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('heroSlides', JSON.stringify(heroSlides));
+  }, [heroSlides]);
+
+  useEffect(() => {
+    localStorage.setItem('managedCategories', JSON.stringify(managedCategories));
+  }, [managedCategories]);
+
+  useEffect(() => {
+    localStorage.setItem('gym_millet_cart', JSON.stringify(cartItems));
+  }, [cartItems]);
+
+  useEffect(() => {
+    localStorage.setItem('gym_millet_wishlist', JSON.stringify(wishlist));
+  }, [wishlist]);
   
   // Modals & Popups
+  const [showSplash, setShowSplash] = useState(true);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
   const [skeletonLoading, setSkeletonLoading] = useState(false);
 
-  // Simulated Authentication State
-  const [currentUser, setCurrentUser] = useState({
-    name: 'Trainer Akhil',
-    email: 'akhil@gymmillets.com',
-    mobile: '9876543210'
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('currentUser');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return null;
   });
   
-  // Login Form State
-  const [loginForm, setLoginForm] = useState({ email: '', password: '', name: '' });
-  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  // Login Form & OTP State
+  const [loginForm, setLoginForm] = useState({ email: '' });
+  const [otpToken, setOtpToken] = useState('');
+  const [sentOtpCode, setSentOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
 
   // Mock Active Orders
   const [orders, setOrders] = useState([
@@ -134,6 +237,87 @@ export default function App() {
     // Recover dark mode preferences or defaults
     const localDark = localStorage.getItem('darkMode') === 'true';
     setDarkMode(localDark);
+
+    // ── Load from Supabase (with safe fallback to static data) ──
+    // Products: if Supabase has data use it; otherwise keep static PRODUCTS
+    dbLoadProducts()
+      .then(rows => {
+        if (rows && rows.length > 0) {
+          const upgraded = rows.map(p => {
+            if (p.variants && p.variants.length > 0 && typeof p.variants[0] === 'string') {
+              if (p.category === 'Ready Mix') {
+                return {
+                  ...p,
+                  variants: [
+                    { label: "250 g", price: 130 },
+                    { label: "500 g", price: 240 },
+                    { label: "1 kg", price: 450 }
+                  ]
+                };
+              } else if (p.category === 'Noodles' || p.category === 'Soups') {
+                return {
+                  ...p,
+                  variants: [
+                    { label: "1 Packet", price: 80 },
+                    { label: "2 Packets", price: 150 },
+                    { label: "4 Packets", price: 280 }
+                  ]
+                };
+              }
+            }
+            return p;
+          });
+          setProducts(upgraded);
+        }
+      })
+      .catch(() => { /* Supabase unavailable — static PRODUCTS already in state */ });
+
+    // Orders: merge Supabase orders on top of mock seed order
+    dbLoadOrders()
+      .then(rows => { if (rows && rows.length > 0) setOrders(rows); })
+      .catch(() => { /* keep in-memory mock orders */ });
+
+    // Coupons: if Supabase has coupons use them; otherwise keep static COUPONS
+    dbLoadCoupons()
+      .then(rows => { if (rows && rows.length > 0) setDbCoupons(rows); })
+      .catch(() => { /* keep static COUPONS */ });
+  }, []);
+
+
+
+
+  // Sync activeView changes to the browser's URL path
+  useEffect(() => {
+    const path = window.location.pathname;
+    let expected = '/';
+    if (activeView === 'admin') expected = '/admin';
+    else if (activeView === 'shop') expected = '/shop';
+    else if (activeView === 'wishlist') expected = '/wishlist';
+    else if (activeView === 'cart') expected = '/cart';
+    else if (activeView === 'about') expected = '/about';
+    else if (activeView === 'contact') expected = '/contact';
+    else if (activeView === 'account') expected = '/account';
+
+    if (path !== expected) {
+      window.history.pushState(null, '', expected);
+    }
+  }, [activeView]);
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path === '/admin' || path === '/adminlogin') setActiveView('admin');
+      else if (path === '/shop') setActiveView('shop');
+      else if (path === '/wishlist') setActiveView('wishlist');
+      else if (path === '/cart') setActiveView('cart');
+      else if (path === '/about') setActiveView('about');
+      else if (path === '/contact') setActiveView('contact');
+      else if (path === '/account') setActiveView('account');
+      else setActiveView('home');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   // Class Toggle for Tailwind Dark Mode
@@ -145,6 +329,11 @@ export default function App() {
     }
     localStorage.setItem('darkMode', darkMode.toString());
   }, [darkMode]);
+
+  // Sync Admin Authentication state to localStorage
+  useEffect(() => {
+    localStorage.setItem('isAdminAuthenticated', isAdminAuthenticated.toString());
+  }, [isAdminAuthenticated]);
 
   // Simulate skeleton loadings on filter change for high premium responsiveness
   useEffect(() => {
@@ -192,17 +381,21 @@ export default function App() {
 
   const handleAddToCart = (product, variant = null) => {
     const itemKey = `${product.id}-${variant || 'none'}`;
+    const existing = cartItems.find(item => `${item.product.id}-${item.variant || 'none'}` === itemKey);
+    if (existing) {
+      addToast(`Increased quantity of ${product.name}!`, 'success');
+    } else {
+      addToast(`Added ${product.name} to your basket!`, 'success');
+    }
     setCartItems(prev => {
-      const existing = prev.find(item => `${item.product.id}-${item.variant || 'none'}` === itemKey);
-      if (existing) {
-        addToast(`Increased quantity of ${product.name}!`, 'success');
+      const exists = prev.find(item => `${item.product.id}-${item.variant || 'none'}` === itemKey);
+      if (exists) {
         return prev.map(item =>
           `${item.product.id}-${item.variant || 'none'}` === itemKey
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       } else {
-        addToast(`Added ${product.name} to your basket!`, 'success');
         return [...prev, { product, variant, quantity: 1 }];
       }
     });
@@ -210,12 +403,16 @@ export default function App() {
 
   const handleRemoveFromCart = (product, variant = null, forceRemove = false) => {
     const itemKey = `${product.id}-${variant || 'none'}`;
-    setCartItems(prev => {
-      const existing = prev.find(item => `${item.product.id}-${item.variant || 'none'}` === itemKey);
-      if (!existing) return prev;
-
+    const existing = cartItems.find(item => `${item.product.id}-${item.variant || 'none'}` === itemKey);
+    if (existing) {
       if (existing.quantity === 1 || forceRemove) {
         addToast(`Removed ${product.name} from basket.`, 'warning');
+      }
+    }
+    setCartItems(prev => {
+      const exists = prev.find(item => `${item.product.id}-${item.variant || 'none'}` === itemKey);
+      if (!exists) return prev;
+      if (exists.quantity === 1 || forceRemove) {
         return prev.filter(item => `${item.product.id}-${item.variant || 'none'}` !== itemKey);
       } else {
         return prev.map(item =>
@@ -228,66 +425,150 @@ export default function App() {
   };
 
   const handleToggleWishlist = (product) => {
-    setWishlist(prev => {
-      const isLiked = prev.some(p => p.id === product.id);
-      if (isLiked) {
-        addToast(`Removed ${product.name} from wishlist`, 'warning');
-        return prev.filter(p => p.id !== product.id);
-      } else {
-        addToast(`Added ${product.name} to wishlist!`, 'success');
-        return [...prev, product];
-      }
-    });
+    const isLiked = wishlist.some(p => p.id === product.id);
+    if (isLiked) {
+      addToast(`Removed ${product.name} from wishlist`, 'warning');
+      setWishlist(prev => prev.filter(p => p.id !== product.id));
+    } else {
+      addToast(`Added ${product.name} to wishlist!`, 'success');
+      setWishlist(prev => [...prev, product]);
+    }
   };
 
-  const handleLoginSubmit = (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
-    if (!loginForm.email || !loginForm.password) {
-      addToast('Please enter credentials.', 'warning');
+    if (!loginForm.email) {
+      addToast('Please enter your email.', 'warning');
       return;
     }
-
-    if (isRegisterMode) {
-      const newUser = {
-        name: loginForm.name || 'Natural Guest',
-        email: loginForm.email,
-        mobile: '9988776655'
-      };
-      setCurrentUser(newUser);
-      addToast('Registered & Logged in successfully!', 'success');
-    } else {
-      const activeUser = {
-        name: loginForm.email.split('@')[0],
-        email: loginForm.email,
-        mobile: '9876543210'
-      };
-      setCurrentUser(activeUser);
-      addToast('Welcome back, logged in successfully!', 'success');
+    setAuthLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginForm.email })
+      });
+      const data = await response.json();
+      setAuthLoading(false);
+      if (response.ok && data.success) {
+        setOtpSent(true);
+        addToast('OTP code sent successfully to your email inbox!', 'success');
+      } else {
+        addToast(data.error || 'Failed to send OTP.', 'error');
+      }
+    } catch (err) {
+      setAuthLoading(false);
+      addToast('Backend server is not running. Please start it using "npm run server".', 'error');
     }
-    
-    setIsLoginModalOpen(false);
-    setLoginForm({ email: '', password: '', name: '' });
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (!otpToken) {
+      addToast('Please enter the OTP code.', 'warning');
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginForm.email, otp: otpToken })
+      });
+      const data = await response.json();
+      setAuthLoading(false);
+      if (response.ok && data.success) {
+        const user = {
+          name: loginForm.email.split('@')[0],
+          email: loginForm.email,
+          mobile: ''
+        };
+        setCurrentUser(user);
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        addToast('Logged in successfully!', 'success');
+        setIsLoginModalOpen(false);
+        setLoginForm({ email: '' });
+        setOtpToken('');
+        setOtpSent(false);
+      } else {
+        addToast(data.error || 'Invalid OTP code.', 'error');
+      }
+    } catch (err) {
+      setAuthLoading(false);
+      addToast('Backend server is not running. Please start it using "npm run server".', 'error');
+    }
+  };
+
+  const handleCredentialResponse = (response) => {
+    try {
+      const jwt = response.credential;
+      const payload = JSON.parse(atob(jwt.split('.')[1]));
+      const user = {
+        name: payload.name || payload.email.split('@')[0],
+        email: payload.email,
+        mobile: ''
+      };
+      setCurrentUser(user);
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      addToast(`Welcome ${user.name}, logged in via Google!`, 'success');
+      setIsLoginModalOpen(false);
+    } catch (err) {
+      addToast('Google Login failed to decode user.', 'error');
+    }
+  };
+
+  const handleGoogleSignIn = () => {
+    if (window.google) {
+      window.google.accounts.id.prompt();
+    } else {
+      addToast('Google SDK not loaded yet. Try again.', 'warning');
+    }
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    localStorage.removeItem('currentUser');
     addToast('Logged out successfully.', 'info');
   };
 
-  // Place Order handler
+  // Google Sign-In button rendering hook
+  useEffect(() => {
+    if (isLoginModalOpen && window.google) {
+      setTimeout(() => {
+        const btnContainer = document.getElementById("googleBtn");
+        if (btnContainer) {
+          window.google.accounts.id.initialize({
+            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+            callback: handleCredentialResponse
+          });
+          window.google.accounts.id.renderButton(
+            btnContainer,
+            { theme: "outline", size: "large", width: btnContainer.offsetWidth || 280 }
+          );
+        }
+      }, 150);
+    }
+  }, [isLoginModalOpen]);
+
+  // Place Order handler — saves to Supabase then updates local state
   const handlePlaceOrder = (orderDetails) => {
     const finalOrder = {
       ...orderDetails,
       id: `GM-${Math.floor(1000 + Math.random() * 9000)}`,
-      status: 'Placed'
+      status: 'Placed',
+      userEmail: currentUser?.email || 'guest@gymmillets.com'
     };
 
+    // Optimistically update UI first (never blocks the user)
     setOrders(prev => [finalOrder, ...prev]);
     setActiveOrder(finalOrder);
     setCartItems([]);
     setAppliedCoupon(null);
-    setActiveView('order-tracking');
-    addToast('Order Placed! Check real-time tracking.', 'success');
+    setActiveView('order-success');
+    addToast('Order Placed successfully!', 'success');
+
+    // Persist to Supabase in background (no UI impact if it fails)
+    dbSaveOrder(finalOrder).catch(() => {});
   };
 
   // Category & Product Filters
@@ -311,18 +592,20 @@ export default function App() {
       <Toast toasts={toasts} onRemoveToast={removeToast} />
 
       {/* Navbar Integration */}
-      <Navbar
-        cartCount={cartItems.reduce((acc, item) => acc + item.quantity, 0)}
-        wishlistCount={wishlist.length}
-        activeView={activeView}
-        setActiveView={setActiveView}
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
-        onOpenCart={() => { setActiveView('cart'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-        openLoginModal={() => setIsLoginModalOpen(true)}
-        currentUser={currentUser}
-        logout={handleLogout}
-      />
+      {activeView !== 'admin' && (
+        <Navbar
+          cartCount={cartItems.reduce((acc, item) => acc + item.quantity, 0)}
+          wishlistCount={wishlist.length}
+          activeView={activeView}
+          setActiveView={setActiveView}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+          onOpenCart={() => { setActiveView('cart'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+          openLoginModal={() => setIsLoginModalOpen(true)}
+          currentUser={currentUser}
+          logout={handleLogout}
+        />
+      )}
 
       {/* MAIN CONTENT VIEW SWITCHER */}
       <main className="flex-grow">
@@ -330,7 +613,7 @@ export default function App() {
         {/* VIEW 1: HOME PAGE */}
         {activeView === 'home' && (
           <div className="space-y-0">
-            <Hero setSearchQuery={setSearchQuery} setActiveView={setActiveView} />
+            <Hero setSearchQuery={setSearchQuery} setActiveView={setActiveView} heroSlides={heroSlides} />
             
             {/* Shop By Category Section */}
             <section className="py-16 bg-cream/30 dark:bg-cream-dark/5 border-b border-accent/10">
@@ -357,12 +640,12 @@ export default function App() {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {CATEGORIES.map((cat, idx) => {
+                  {managedCategories.map((cat, idx) => {
                     return (
                       <button
                         key={cat.name}
                         onClick={() => {
-                          setSelectedCategory(cat.filter);
+                          setSelectedCategory(cat.name);
                           setActiveView('shop');
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
@@ -371,12 +654,17 @@ export default function App() {
                         data-aos-delay={idx * 50}
                       >
                         {/* Rectangular Image wrapper on top */}
-                        <div className="aspect-[4/3] w-full overflow-hidden relative">
-                          <img 
-                            src={cat.image} 
-                            alt={cat.name} 
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                          />
+                        <div className="aspect-[4/3] w-full overflow-hidden relative bg-cream/30 dark:bg-cream-dark/5">
+                          {cat.image ? (
+                            <img 
+                              src={cat.image} 
+                              alt={cat.name} 
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                              onError={e => { e.target.style.display = 'none'; }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-xs text-textLight dark:text-cream/35 font-bold uppercase tracking-wider">🌾 No Image</div>
+                          )}
                         </div>
 
                         {/* Centered Category Title Area */}
@@ -649,9 +937,9 @@ export default function App() {
               </div>
             </div>
 
-            {/* Category Filter Pills (Swiggy Horizontal Steppers) */}
+            {/* Category Filter Pills */}
             <div className="flex gap-2.5 overflow-x-auto pb-4 mb-8 -mx-4 px-4 scrollbar-none">
-              {['All', ...PRODUCTS.reduce((acc, p) => acc.includes(p.category) ? acc : [...acc, p.category], [])].map((catName) => (
+              {['All', ...managedCategories.map(c => c.name)].map((catName) => (
                 <button
                   key={catName}
                   onClick={() => setSelectedCategory(catName)}
@@ -972,14 +1260,38 @@ export default function App() {
 
         {/* VIEW 4: ADMIN DASHBOARD */}
         {activeView === 'admin' && (
-          <AdminPanel
-            products={products}
-            setProducts={setProducts}
-            orders={orders}
-            setOrders={setOrders}
-            categories={['Ready Mix', 'Instant Mix', 'Freeze Dried Powders', 'Noodles', 'Soups', 'Hot Meal']}
-            onAddToast={addToast}
-          />
+          !isAdminAuthenticated ? (
+            <AdminLogin
+              onLogin={() => setIsAdminAuthenticated(true)}
+              onBack={() => setActiveView('home')}
+            />
+          ) : (
+            <AdminPanel
+              products={products}
+              setProducts={setProducts}
+              orders={orders}
+              setOrders={setOrders}
+              categories={managedCategories}
+              onUpdateCategories={setManagedCategories}
+              dbCoupons={dbCoupons}
+              setDbCoupons={setDbCoupons}
+              heroSlides={heroSlides}
+              onUpdateHeroSlides={setHeroSlides}
+              onAddToast={addToast}
+              onDbAddProduct={dbAddProduct}
+              onDbUpdateProduct={dbUpdateProduct}
+              onDbDeleteProduct={dbDeleteProduct}
+              onDbUpdateOrderStatus={dbUpdateOrderStatus}
+              onDbUpdateOrderShippingDetails={dbUpdateOrderShippingDetails}
+              onDbAddCoupon={dbAddCoupon}
+              onDbDeleteCoupon={dbDeleteCoupon}
+              onAdminLogout={() => {
+                setIsAdminAuthenticated(false);
+                addToast('Logged out of Admin Panel.', 'info');
+                setActiveView('home');
+              }}
+            />
+          )
         )}
 
         {/* VIEW 5: CHECKOUT FLOW */}
@@ -992,11 +1304,91 @@ export default function App() {
           />
         )}
 
+        {/* VIEW 5.5: ORDER SUCCESS SCREEN */}
+        {activeView === 'order-success' && activeOrder && (
+          <div className="pt-48 sm:pt-52 lg:pt-56 pb-20 max-w-xl mx-auto px-4 min-h-screen text-center flex flex-col items-center justify-center animate-fade-in">
+            <div className="w-20 h-20 bg-success/15 dark:bg-success/20 rounded-full flex items-center justify-center mb-6 animate-pulse">
+              <span className="text-4xl">✅</span>
+            </div>
+            <h1 className="text-3xl font-outfit font-black text-textDark dark:text-cream">
+              Order Received Successfully!
+            </h1>
+            <p className="text-sm text-textLight dark:text-cream/60 mt-2 font-medium">
+              Thank you for shopping with GymMillets. Your fresh millet foods are being prepared.
+            </p>
+
+            <div className="w-full bg-cream/40 dark:bg-darkCard border border-accent/15 dark:border-accent/5 rounded-3xl p-6 mt-8 text-left space-y-4 shadow-premium">
+              <h3 className="font-outfit font-extrabold text-sm text-textDark dark:text-cream border-b border-accent/10 pb-2">Order Summary</h3>
+              <div className="grid grid-cols-2 gap-y-2 text-xs font-semibold">
+                <span className="text-textLight dark:text-cream/50">Order ID:</span>
+                <span className="font-bold text-textDark dark:text-cream text-right">{activeOrder.id}</span>
+                <span className="text-textLight dark:text-cream/50">Total Amount:</span>
+                <span className="font-bold text-textDark dark:text-cream text-right">₹{activeOrder.total}</span>
+                <span className="text-textLight dark:text-cream/50">Payment Method:</span>
+                <span className="font-bold text-textDark dark:text-cream text-right">{activeOrder.paymentDetails?.method || 'Cash on Delivery'}</span>
+                <span className="text-textLight dark:text-cream/50">Deliver To:</span>
+                <span className="font-bold text-textDark dark:text-cream text-right truncate">{activeOrder.shippingDetails?.name}</span>
+              </div>
+            </div>
+
+            <div className="w-full space-y-3 mt-8">
+              <a
+                href={`https://wa.me/919876543210?text=${encodeURIComponent(
+                  `GymMillets - Order Received Successfully! 🌾\n\n` +
+                  `Order ID: ${activeOrder.id}\n` +
+                  `Total Amount: ₹${activeOrder.total}\n` +
+                  `Payment Method: ${activeOrder.paymentDetails?.method || 'Cash on Delivery'}\n\n` +
+                  `Items Ordered: \n${(activeOrder.items || []).map(item => `- ${item.name} (${item.variant || 'Standard'}) x ${item.quantity} - ₹${item.price * item.quantity}`).join('\n')}\n\n` +
+                  `Delivery Details: \n` +
+                  `Name: ${activeOrder.shippingDetails?.name}\n` +
+                  `Contact Mobile: +91 ${activeOrder.shippingDetails?.mobile}\n` +
+                  (activeOrder.shippingDetails?.alternateMobile ? `Alternate Mobile: +91 ${activeOrder.shippingDetails?.alternateMobile}\n` : '') +
+                  `Address: ${activeOrder.shippingDetails?.address}, ${activeOrder.shippingDetails?.city} - ${activeOrder.shippingDetails?.pincode}\n` +
+                  (activeOrder.shippingDetails?.locationUrl ? `Location Link: ${activeOrder.shippingDetails?.locationUrl}\n\n` : '\n') +
+                  `Thank you! 💪`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold py-3.5 rounded-full shadow-premium transition-all text-sm hover:scale-[1.01] active:scale-95 duration-200"
+              >
+                <span className="text-base">💬</span>
+                <span>Share Order Details on WhatsApp</span>
+              </a>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setActiveView('order-tracking')}
+                  className="w-full bg-primary hover:bg-primary-dark text-cream font-bold py-3 rounded-full text-xs shadow-premium hover:scale-[1.01] active:scale-95 transition-all duration-200"
+                >
+                  Track Order
+                </button>
+                <button
+                  onClick={() => { setSelectedCategory('All'); setActiveView('shop'); }}
+                  className="w-full bg-cream hover:bg-cream-dark dark:bg-[#252525] dark:hover:bg-[#303030] text-textDark dark:text-cream border border-accent/15 dark:border-accent/5 font-bold py-3 rounded-full text-xs hover:scale-[1.01] active:scale-95 transition-all duration-200"
+                >
+                  Continue Shopping
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* VIEW 6: LIVE ORDER TRACKING */}
         {activeView === 'order-tracking' && (
           <OrderTrackingView
             activeOrder={activeOrder}
             setActiveView={setActiveView}
+          />
+        )}
+
+        {/* VIEW 7: USER ACCOUNT & PAST ORDERS */}
+        {activeView === 'account' && currentUser && (
+          <UserAccount
+            currentUser={currentUser}
+            setCurrentUser={setCurrentUser}
+            orders={orders}
+            setActiveView={setActiveView}
+            onAddToast={addToast}
           />
         )}
 
@@ -1230,11 +1622,13 @@ export default function App() {
       </main>
 
       {/* FOOTER */}
-      <Footer
-        setActiveView={setActiveView}
-        setSelectedCategory={setSelectedCategory}
-        onAddToast={addToast}
-      />
+      {activeView !== 'admin' && (
+        <Footer
+          setActiveView={setActiveView}
+          setSelectedCategory={setSelectedCategory}
+          onAddToast={addToast}
+        />
+      )}
 
       {/* Cart is now a full page view — no modal needed */}
 
@@ -1256,7 +1650,11 @@ export default function App() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm">
           <div className="relative w-full max-w-sm bg-white dark:bg-darkCard border border-accent/25 dark:border-accent/5 rounded-3xl shadow-premium overflow-hidden p-6 sm:p-8 space-y-6">
             <button
-              onClick={() => setIsLoginModalOpen(false)}
+              onClick={() => {
+                setIsLoginModalOpen(false);
+                setOtpSent(false);
+                setOtpToken('');
+              }}
               className="absolute top-4 right-4 p-2 bg-cream/70 hover:bg-cream dark:bg-darkCard dark:hover:bg-darkCard/80 text-textDark dark:text-cream rounded-full border border-accent/15 transition-all"
             >
               🌾
@@ -1264,66 +1662,94 @@ export default function App() {
 
             <div className="text-center space-y-1">
               <h3 className="text-2xl font-outfit font-black text-textDark dark:text-cream">
-                {isRegisterMode ? 'Register Account' : 'Login Store'}
+                {otpSent ? 'Verify OTP' : 'Login / Sign Up'}
               </h3>
               <p className="text-xs text-textLight dark:text-cream/50">
-                {isRegisterMode ? 'Sign up to purchase natural millet foods.' : 'Welcome back to your natural diet tracker.'}
+                {otpSent ? `Enter the 6-digit code sent to ${loginForm.email}` : 'Sign in using secure Email OTP or Google.'}
               </p>
             </div>
 
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              {isRegisterMode && (
+            {!otpSent ? (
+              <div className="space-y-4">
+                <form onSubmit={handleSendOtp} className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-extrabold text-textLight dark:text-cream/40 uppercase">Email Address</label>
+                    <input
+                      type="email"
+                      placeholder="coach@gymmillets.com"
+                      value={loginForm.email}
+                      onChange={(e) => setLoginForm({ email: e.target.value })}
+                      className="bg-cream/40 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-2.5 text-xs text-textDark dark:text-cream font-bold focus:outline-none focus:border-primary/60"
+                      required
+                      disabled={authLoading}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={authLoading}
+                    className="w-full bg-primary hover:bg-primary-dark text-cream font-bold py-3 rounded-full text-xs shadow-premium flex items-center justify-center gap-1.5 transition-all scale-100 active:scale-95 disabled:opacity-50 mt-2"
+                  >
+                    {authLoading ? (
+                      <Loader size={14} className="animate-spin" />
+                    ) : (
+                      <Mail size={14} />
+                    )}
+                    <span>{authLoading ? 'SENDING...' : 'SEND OTP'}</span>
+                  </button>
+                </form>
+
+                <div className="relative flex py-2 items-center">
+                  <div className="flex-grow border-t border-accent/20"></div>
+                  <span className="flex-shrink mx-3 text-textLight/60 dark:text-cream/30 text-[10px] font-extrabold uppercase">OR</span>
+                  <div className="flex-grow border-t border-accent/20"></div>
+                </div>
+
+                <div className="w-full flex justify-center pt-1">
+                  <div id="googleBtn" className="w-full max-w-[280px]"></div>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-extrabold text-textLight dark:text-cream/40 uppercase">Your Name</label>
+                  <label className="text-xs font-extrabold text-textLight dark:text-cream/40 uppercase">Enter OTP Code</label>
                   <input
                     type="text"
-                    placeholder="Enter name"
-                    value={loginForm.name}
-                    onChange={(e) => setLoginForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="bg-cream/40 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-2.5 text-xs text-textDark dark:text-cream font-bold"
+                    maxLength={6}
+                    placeholder="123456"
+                    value={otpToken}
+                    onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, ''))}
+                    className="bg-cream/40 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-2.5 text-xs text-textDark dark:text-cream font-bold tracking-widest text-center focus:outline-none focus:border-primary/60"
+                    required
+                    disabled={authLoading}
                   />
                 </div>
-              )}
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-extrabold text-textLight dark:text-cream/40 uppercase">Email Address</label>
-                <input
-                  type="email"
-                  placeholder="coach@gymmillets.com"
-                  value={loginForm.email}
-                  onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
-                  className="bg-cream/40 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-2.5 text-xs text-textDark dark:text-cream font-bold"
-                  required
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-extrabold text-textLight dark:text-cream/40 uppercase">Security Password</label>
-                <input
-                  type="password"
-                  placeholder="******"
-                  value={loginForm.password}
-                  onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
-                  className="bg-cream/40 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-2.5 text-xs text-textDark dark:text-cream font-bold"
-                  required
-                />
-              </div>
 
-              <button
-                type="submit"
-                className="w-full bg-primary hover:bg-primary-dark text-cream font-bold py-3 rounded-full text-xs shadow-premium flex items-center justify-center gap-1.5 transition-all scale-100 active:scale-95 mt-2"
-              >
-                <KeyRound size={14} />
-                <span>{isRegisterMode ? 'SIGN UP NOW' : 'SECURE LOGIN'}</span>
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={authLoading}
+                  className="w-full bg-primary hover:bg-primary-dark text-cream font-bold py-3 rounded-full text-xs shadow-premium flex items-center justify-center gap-1.5 transition-all scale-100 active:scale-95 disabled:opacity-50 mt-2"
+                >
+                  {authLoading ? (
+                    <Loader size={14} className="animate-spin" />
+                  ) : (
+                    <KeyRound size={14} />
+                  )}
+                  <span>{authLoading ? 'VERIFYING...' : 'VERIFY OTP'}</span>
+                </button>
 
-            <div className="text-center pt-2">
-              <button
-                onClick={() => setIsRegisterMode(!isRegisterMode)}
-                className="text-xs font-bold text-primary dark:text-success-light hover:underline uppercase"
-              >
-                {isRegisterMode ? 'Already have an account? Login' : "Don't have an account? Sign up"}
-              </button>
-            </div>
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setOtpSent(false)}
+                    disabled={authLoading}
+                    className="text-xs font-bold text-primary dark:text-success-light hover:underline uppercase"
+                  >
+                    Change Email / Go Back
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
@@ -1370,6 +1796,11 @@ export default function App() {
             <ShoppingCart size={14} />
           </button>
         </div>
+      )}
+
+      {/* Dynamic Animated Splash Screen Overlay */}
+      {showSplash && (
+        <Splash onComplete={() => setShowSplash(false)} />
       )}
 
     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Heart, User, Menu, X, Sun, Moon } from 'lucide-react';
+import { ShoppingCart, Heart, User, Menu, X, Sun, Moon, Settings } from 'lucide-react';
 
 export default function Navbar({
   cartCount,
@@ -45,7 +45,7 @@ export default function Navbar({
 
   return (
     <nav
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-[#1C1A17] dark:bg-black border-b border-accent/15 shadow-premium ${
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-primary dark:bg-primary-dark border-b border-accent/15 shadow-premium ${
         isScrolled || mobileMenuOpen
           ? 'py-3'
           : 'py-5'
@@ -66,7 +66,7 @@ export default function Navbar({
                 onClick={() => handleNavClick(link.view)}
                 className={`px-3.5 py-2 rounded-full font-medium text-sm transition-all duration-300 ${
                   activeView === link.view
-                    ? 'bg-primary text-cream shadow-premium'
+                    ? 'bg-cream text-primary shadow-premium'
                     : 'text-cream/80 hover:text-cream hover:bg-white/10'
                 }`}
               >
@@ -112,6 +112,8 @@ export default function Navbar({
               )}
             </button>
 
+
+
             {/* User Profile / Login */}
             <div className="relative">
               {currentUser ? (
@@ -129,6 +131,15 @@ export default function Navbar({
                         <p className="text-xs text-textLight dark:text-cream/50">Logged in as</p>
                         <p className="text-sm font-semibold truncate text-textDark dark:text-cream">{currentUser.email}</p>
                       </div>
+                      <button
+                        onClick={() => {
+                          setActiveView('account');
+                          setProfileDropdownOpen(false);
+                        }}
+                        className="w-full text-left px-3.5 py-2 text-sm text-textDark dark:text-cream hover:bg-primary/10 rounded-xl transition-all"
+                      >
+                        My Account
+                      </button>
                       <button
                         onClick={() => {
                           setActiveView('order-tracking');
@@ -153,7 +164,7 @@ export default function Navbar({
               ) : (
                 <button
                   onClick={openLoginModal}
-                  className="flex items-center gap-1.5 px-4.5 py-2 rounded-full bg-primary text-cream hover:bg-primary-dark transition-all duration-300 shadow-premium font-medium text-sm"
+                  className="flex items-center gap-1.5 px-4.5 py-2 rounded-full bg-cream text-primary hover:bg-cream/90 transition-all duration-300 shadow-premium font-medium text-sm"
                 >
                   <User size={16} />
                   <span>Login</span>
@@ -198,14 +209,14 @@ export default function Navbar({
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#1C1A17] dark:bg-black shadow-premium border-b border-accent/20 px-4 pt-2 pb-6 space-y-2 mt-2 max-h-[85vh] overflow-y-auto">
+        <div className="md:hidden bg-primary dark:bg-primary-dark shadow-premium border-b border-accent/20 px-4 pt-2 pb-6 space-y-2 mt-2 max-h-[85vh] overflow-y-auto">
           {navLinks.map((link) => (
             <button
               key={link.label}
               onClick={() => handleNavClick(link.view)}
               className={`block w-full text-left px-4 py-2.5 rounded-2xl font-medium text-base transition-colors ${
                 activeView === link.view
-                  ? 'bg-primary text-cream'
+                  ? 'bg-cream text-primary'
                   : 'text-cream/80 hover:text-cream hover:bg-white/10'
               }`}
             >
@@ -220,9 +231,23 @@ export default function Navbar({
               <Heart size={18} className={wishlistCount > 0 ? 'fill-highlight text-highlight' : ''} />
               <span>Wishlist ({wishlistCount})</span>
             </button>
-
+            {/* Admin Panel Link */}
+            <button
+              onClick={() => handleNavClick('admin')}
+              className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-cream/80 hover:text-cream hover:bg-white/10 text-left font-medium"
+            >
+              <Settings size={18} />
+              <span>Admin Panel</span>
+            </button>
             {currentUser ? (
               <>
+                <button
+                  onClick={() => handleNavClick('account')}
+                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-cream/80 hover:text-cream hover:bg-white/10 text-left font-medium"
+                >
+                  <User size={18} />
+                  <span>My Account</span>
+                </button>
                 <button
                   onClick={() => handleNavClick('order-tracking')}
                   className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-cream/80 hover:text-cream hover:bg-white/10 text-left font-medium"
@@ -251,7 +276,7 @@ export default function Navbar({
                   setMobileMenuOpen(false);
                   openLoginModal();
                 }}
-                className="w-full py-3 rounded-2xl bg-primary text-cream text-center font-semibold text-sm shadow-premium flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-2xl bg-cream text-primary text-center font-semibold text-sm shadow-premium flex items-center justify-center gap-2"
               >
                 <User size={16} />
                 <span>Login / Register</span>

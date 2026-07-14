@@ -34,17 +34,20 @@ const MILLETS = [
   }
 ];
 
-export default function Hero({ setSearchQuery, setActiveView }) {
+export default function Hero({ setSearchQuery, setActiveView, heroSlides = [] }) {
+  const slides = heroSlides && heroSlides.length > 0 ? heroSlides : MILLETS;
   const [localSearch, setLocalSearch] = useState('');
   const [currentMilletIndex, setCurrentMilletIndex] = useState(0);
 
   useEffect(() => {
+    if (slides.length === 0) return;
     const timer = setInterval(() => {
-      setCurrentMilletIndex((prev) => (prev + 1) % MILLETS.length);
+      setCurrentMilletIndex((prev) => (prev + 1) % slides.length);
     }, 2000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
+  const activeIndex = currentMilletIndex >= slides.length ? 0 : currentMilletIndex;
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -171,17 +174,17 @@ export default function Hero({ setSearchQuery, setActiveView }) {
           <div className="relative z-10 w-[280px] h-[280px] sm:w-[400px] sm:h-[400px] rounded-full border-[6px] border-white dark:border-darkCard shadow-premium bg-white/60 dark:bg-darkBackground/60 flex items-center justify-center">
             <div className="w-full h-full rounded-full overflow-hidden relative">
               <img
-                src={MILLETS[currentMilletIndex].image}
-                alt={MILLETS[currentMilletIndex].alt}
+                src={slides[activeIndex]?.image || '/millet-mix.png'}
+                alt={slides[activeIndex]?.alt || 'Millet Slide'}
                 className="w-full h-full object-contain p-1"
                 loading="eager"
               />
             </div>
             {/* Dynamic Active Millet Name Badge */}
-            {MILLETS[currentMilletIndex].name && (
+            {slides[activeIndex]?.name && (
               <div className="absolute -bottom-3 sm:-bottom-4 left-1/2 transform -translate-x-1/2 z-20 bg-white/95 dark:bg-darkCard/95 backdrop-blur-md px-4 sm:px-5 py-1.5 sm:py-2 rounded-full border border-accent/20 shadow-premium transition-all duration-300">
                 <span className="text-[10px] sm:text-xs font-extrabold text-primary dark:text-success-light uppercase tracking-wider block whitespace-nowrap">
-                  {MILLETS[currentMilletIndex].name}
+                  {slides[activeIndex]?.name}
                 </span>
               </div>
             )}

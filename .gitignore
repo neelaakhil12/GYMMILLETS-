@@ -25,3 +25,8 @@ dist-ssr
 
 # Local screenshots and backup image copies
 /image*.png
+
+# Environment variables (secrets - never commit)
+.env
+.env.local
+.env.production

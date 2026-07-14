@@ -3,7 +3,7 @@ import { CheckCircle, AlertTriangle, Info, X } from 'lucide-react';
 
 export default function Toast({ toasts, onRemoveToast }) {
   return (
-    <div className="fixed top-20 right-4 z-50 space-y-2.5 max-w-sm w-full pointer-events-none">
+    <div className="fixed top-36 sm:top-40 right-4 z-[999999] space-y-2.5 max-w-sm w-full pointer-events-none">
       {toasts.map((t) => (
         <ToastItem key={t.id} toast={t} onRemove={onRemoveToast} />
       ))}

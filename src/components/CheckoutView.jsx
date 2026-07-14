@@ -8,12 +8,17 @@ export default function CheckoutView({
   setActiveView
 }) {
   const [step, setStep] = useState(1);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
+  const [isLocating, setIsLocating] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     mobile: '',
+    alternateMobile: '',
     address: '',
     city: '',
     pincode: '',
+    locationUrl: '',
     paymentMethod: 'cod', // cod | card | upi
     cardNo: '',
     expiry: '',
@@ -21,6 +26,56 @@ export default function CheckoutView({
     upiId: ''
   });
   const [formErrors, setFormErrors] = useState({});
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          setIsLocating(false);
+          if (data && data.display_name) {
+            const addressParts = data.address || {};
+            const road = addressParts.road || '';
+            const neighbourhood = addressParts.neighbourhood || addressParts.suburb || '';
+            const county = addressParts.county || '';
+            const city = addressParts.city || addressParts.town || addressParts.village || '';
+            const state = addressParts.state || '';
+            const pincode = addressParts.postcode || '';
+
+            // Clean address string
+            const mainAddress = [road, neighbourhood, county, state].filter(Boolean).join(', ');
+
+            setFormData(prev => ({
+              ...prev,
+              address: mainAddress || data.display_name,
+              city: city,
+              pincode: pincode.replace(/\s+/g, ''),
+              locationUrl: `https://www.google.com/maps?q=${latitude},${longitude}`
+            }));
+          }
+        } catch (error) {
+          setIsLocating(false);
+          setFormData(prev => ({
+            ...prev,
+            address: `Latitude: ${latitude.toFixed(6)}, Longitude: ${longitude.toFixed(6)}`,
+            locationUrl: `https://www.google.com/maps?q=${latitude},${longitude}`
+          }));
+        }
+      },
+      (error) => {
+        setIsLocating(false);
+        alert("Unable to retrieve your location: " + error.message);
+      }
+    );
+  };
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
   const discountAmount = appliedCoupon ? (subtotal * appliedCoupon.discount) / 100 : 0;
@@ -40,6 +95,9 @@ export default function CheckoutView({
     const errors = {};
     if (!formData.name.trim()) errors.name = 'Name is required';
     if (!formData.mobile.trim() || formData.mobile.trim().length < 10) errors.mobile = 'Enter a valid 10-digit mobile number';
+    if (formData.alternateMobile.trim() && formData.alternateMobile.trim().length < 10) {
+      errors.alternateMobile = 'Enter a valid 10-digit alternate mobile number';
+    }
     if (!formData.address.trim()) errors.address = 'Address is required';
     if (!formData.city.trim()) errors.city = 'City is required';
     if (!formData.pincode.trim() || formData.pincode.trim().length !== 6) errors.pincode = 'Enter a valid 6-digit Pincode';
@@ -49,17 +107,7 @@ export default function CheckoutView({
   };
 
   const validateStep2 = () => {
-    const errors = {};
-    if (formData.paymentMethod === 'card') {
-      if (!formData.cardNo.trim() || formData.cardNo.trim().length < 16) errors.cardNo = 'Enter a valid 16-digit card number';
-      if (!formData.expiry.trim()) errors.expiry = 'Expiry required (MM/YY)';
-      if (!formData.cvv.trim() || formData.cvv.trim().length < 3) errors.cvv = 'CVV required';
-    } else if (formData.paymentMethod === 'upi') {
-      if (!formData.upiId.trim() || !formData.upiId.includes('@')) errors.upiId = 'Enter a valid UPI ID (e.g. name@okhdfc)';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+    return true; // Razorpay handles validations securely inside its checkout portal
   };
 
   const handleNextStep = () => {
@@ -78,7 +126,7 @@ export default function CheckoutView({
     }
   };
 
-  const handlePlaceOrderSubmit = () => {
+  const handlePlaceOrderSubmit = async () => {
     const orderDetails = {
       items: cartItems.map(item => ({
         id: item.product.id,
@@ -91,12 +139,14 @@ export default function CheckoutView({
       shippingDetails: {
         name: formData.name,
         mobile: formData.mobile,
+        alternateMobile: formData.alternateMobile,
         address: formData.address,
         city: formData.city,
-        pincode: formData.pincode
+        pincode: formData.pincode,
+        locationUrl: formData.locationUrl
       },
       paymentDetails: {
-        method: formData.paymentMethod === 'cod' ? 'Cash on Delivery' : formData.paymentMethod === 'upi' ? 'UPI' : 'Card'
+        method: formData.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Razorpay Online'
       },
       subtotal,
       discount: discountAmount,
@@ -105,7 +155,87 @@ export default function CheckoutView({
       total: grandTotal
     };
 
-    onPlaceOrder(orderDetails);
+    if (formData.paymentMethod === 'cod') {
+      onPlaceOrder(orderDetails);
+      return;
+    }
+
+    setIsProcessing(true);
+    setPaymentError('');
+
+    try {
+      // Step 1: Create server-side order
+      const response = await fetch('http://localhost:5000/api/create-razorpay-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: grandTotal })
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.orderId) {
+        throw new Error(data.error || 'Failed to initialize payment gateway.');
+      }
+
+      // Step 2: Open Razorpay checkout modal
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TDHCozKmm4gRkG',
+        amount: data.amount,
+        currency: 'INR',
+        name: 'GymMillets',
+        description: 'Premium Natural Millet Grains',
+        order_id: data.orderId,
+        handler: async function (paymentRes) {
+          try {
+            // Step 3: Verify payment signature
+            const verifyRes = await fetch('http://localhost:5000/api/verify-razorpay-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: paymentRes.razorpay_order_id,
+                razorpay_payment_id: paymentRes.razorpay_payment_id,
+                razorpay_signature: paymentRes.razorpay_signature
+              })
+            });
+            const verifyData = await verifyRes.json();
+
+            if (verifyRes.ok && verifyData.success) {
+              onPlaceOrder({
+                ...orderDetails,
+                paymentDetails: {
+                  method: 'Razorpay Online',
+                  paymentId: paymentRes.razorpay_payment_id,
+                  orderId: paymentRes.razorpay_order_id
+                }
+              });
+            } else {
+              setPaymentError(verifyData.error || 'Payment signature verification failed.');
+              setIsProcessing(false);
+            }
+          } catch (err) {
+            setPaymentError('Connection lost during payment verification.');
+            setIsProcessing(false);
+          }
+        },
+        prefill: {
+          name: formData.name,
+          contact: formData.mobile
+        },
+        theme: {
+          color: '#4b6b40'
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      setPaymentError(err.message || 'Could not contact payment gateway. Make sure server is running.');
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -167,7 +297,7 @@ export default function CheckoutView({
                   <p className="text-xs text-textLight dark:text-cream/50 mt-1">Please enter your shipping address where we should deliver your fresh millet foods.</p>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">Full Name</label>
                     <input
@@ -192,10 +322,32 @@ export default function CheckoutView({
                     />
                     {formErrors.mobile && <span className="text-[10px] text-highlight font-bold">{formErrors.mobile}</span>}
                   </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">Alternate Mobile No</label>
+                    <input
+                      type="tel"
+                      name="alternateMobile"
+                      value={formData.alternateMobile}
+                      onChange={handleInputChange}
+                      placeholder="e.g. 9876543211 (Optional)"
+                      className="bg-cream/50 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-sm font-semibold text-textDark dark:text-cream"
+                    />
+                    {formErrors.alternateMobile && <span className="text-[10px] text-highlight font-bold">{formErrors.alternateMobile}</span>}
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">Street Address & Landmark</label>
+                  <div className="flex justify-between items-center">
+                    <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">Street Address & Landmark</label>
+                    <button
+                      type="button"
+                      onClick={handleLocateMe}
+                      disabled={isLocating}
+                      className="flex items-center gap-1 text-[11px] font-bold text-primary dark:text-success-light hover:underline"
+                    >
+                      📍 <span>{isLocating ? 'LOCATING...' : 'LOCATE ME'}</span>
+                    </button>
+                  </div>
                   <textarea
                     name="address"
                     value={formData.address}
@@ -204,6 +356,14 @@ export default function CheckoutView({
                     placeholder="Flat No, Building Name, Street Name, Near landmark..."
                     className="bg-cream/50 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-sm font-semibold text-textDark dark:text-cream resize-none"
                   />
+                  {formData.locationUrl && (
+                    <div className="text-[11px] font-bold text-primary dark:text-success-light flex items-center gap-1.5 mt-1 bg-primary/5 dark:bg-success/5 p-2 rounded-xl border border-accent/10 dark:border-accent/5">
+                      <span>📍 Location Link:</span>
+                      <a href={formData.locationUrl} target="_blank" rel="noopener noreferrer" className="underline truncate hover:text-primary-dark">
+                        {formData.locationUrl}
+                      </a>
+                    </div>
+                  )}
                   {formErrors.address && <span className="text-[10px] text-highlight font-bold">{formErrors.address}</span>}
                 </div>
 
@@ -296,76 +456,26 @@ export default function CheckoutView({
                   </button>
                 </div>
 
-                {/* Sub Forms */}
-                {formData.paymentMethod === 'card' && (
-                  <div className="space-y-4 bg-cream/30 dark:bg-cream-dark/5 p-4 rounded-2xl border border-accent/5">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">Card Number</label>
-                      <input
-                        type="text"
-                        name="cardNo"
-                        value={formData.cardNo}
-                        onChange={handleInputChange}
-                        maxLength="16"
-                        placeholder="4532 9845 2311 0094"
-                        className="bg-white dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-sm font-semibold text-textDark dark:text-cream"
-                      />
-                      {formErrors.cardNo && <span className="text-[10px] text-highlight font-bold">{formErrors.cardNo}</span>}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">Expiry Date (MM/YY)</label>
-                        <input
-                          type="text"
-                          name="expiry"
-                          value={formData.expiry}
-                          onChange={handleInputChange}
-                          maxLength="5"
-                          placeholder="12/29"
-                          className="bg-white dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-sm font-semibold text-textDark dark:text-cream"
-                        />
-                        {formErrors.expiry && <span className="text-[10px] text-highlight font-bold">{formErrors.expiry}</span>}
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">CVV</label>
-                        <input
-                          type="password"
-                          name="cvv"
-                          value={formData.cvv}
-                          onChange={handleInputChange}
-                          maxLength="3"
-                          placeholder="***"
-                          className="bg-white dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-sm font-semibold text-textDark dark:text-cream"
-                        />
-                        {formErrors.cvv && <span className="text-[10px] text-highlight font-bold">{formErrors.cvv}</span>}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {formData.paymentMethod === 'upi' && (
-                  <div className="bg-cream/30 dark:bg-cream-dark/5 p-4 rounded-2xl border border-accent/5 space-y-4">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">UPI Address ID</label>
-                      <input
-                        type="text"
-                        name="upiId"
-                        value={formData.upiId}
-                        onChange={handleInputChange}
-                        placeholder="e.g. name@ybl, name@okhdfcbank"
-                        className="bg-white dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-sm font-semibold text-textDark dark:text-cream"
-                      />
-                      {formErrors.upiId && <span className="text-[10px] text-highlight font-bold">{formErrors.upiId}</span>}
-                    </div>
+                {paymentError && (
+                  <div className="p-3 bg-highlight/15 text-highlight border border-highlight/30 rounded-2xl text-xs font-bold mt-4">
+                    ⚠️ {paymentError}
                   </div>
                 )}
 
                 <button
-                  onClick={handleNextStep}
-                  className="w-full bg-primary hover:bg-primary-dark text-cream font-bold py-3.5 rounded-full shadow-premium flex items-center justify-center gap-1 hover:shadow-premium-hover scale-100 active:scale-95 transition-all text-sm mt-4"
+                  onClick={formData.paymentMethod === 'cod' ? handleNextStep : handlePlaceOrderSubmit}
+                  disabled={isProcessing}
+                  className={`w-full text-cream font-bold py-3.5 rounded-full shadow-premium flex items-center justify-center gap-1 hover:shadow-premium-hover scale-100 active:scale-95 transition-all text-sm mt-6 ${
+                    isProcessing ? 'bg-gray-400 cursor-not-allowed opacity-75' : 'bg-primary hover:bg-primary-dark'
+                  }`}
                 >
-                  <span>Review Order Summary</span>
+                  <span>
+                    {isProcessing
+                      ? 'PROCESSING PAYMENT...'
+                      : formData.paymentMethod === 'cod'
+                      ? 'Review Order Summary'
+                      : `Continue with Payment (₹${grandTotal})`}
+                  </span>
                 </button>
               </div>
             )}
@@ -390,6 +500,14 @@ export default function CheckoutView({
                       {formData.address}, {formData.city} - {formData.pincode}
                     </p>
                     <p className="text-xs text-textLight dark:text-cream/50 font-bold">Contact: +91 {formData.mobile}</p>
+                    {formData.locationUrl && (
+                      <p className="text-xs text-primary dark:text-success-light font-bold flex items-center gap-1">
+                        <span>📍 Location Link:</span>
+                        <a href={formData.locationUrl} target="_blank" rel="noopener noreferrer" className="underline truncate max-w-[180px]">
+                          Google Maps Link
+                        </a>
+                      </p>
+                    )}
                   </div>
 
                   {/* Payment Recap */}
@@ -411,11 +529,20 @@ export default function CheckoutView({
                     <span className="text-xs font-bold">Safe and Secure SSL checkout. 100% pure natural food guarantee.</span>
                   </div>
 
+                  {paymentError && (
+                    <div className="p-3 bg-highlight/15 text-highlight border border-highlight/30 rounded-2xl text-xs font-bold mb-4">
+                      ⚠️ {paymentError}
+                    </div>
+                  )}
+
                   <button
                     onClick={handlePlaceOrderSubmit}
-                    className="w-full bg-primary hover:bg-primary-dark text-cream font-bold py-4 rounded-full shadow-premium flex items-center justify-center gap-1.5 hover:shadow-premium-hover scale-100 active:scale-95 transition-all text-sm"
+                    disabled={isProcessing}
+                    className={`w-full text-cream font-bold py-4 rounded-full shadow-premium flex items-center justify-center gap-1.5 hover:shadow-premium-hover scale-100 active:scale-95 transition-all text-sm ${
+                      isProcessing ? 'bg-gray-400 cursor-not-allowed opacity-75' : 'bg-primary hover:bg-primary-dark'
+                    }`}
                   >
-                    <span>PLACE ORDER (₹{grandTotal})</span>
+                    <span>{isProcessing ? 'PROCESSING PAYMENT...' : `PLACE ORDER (₹${grandTotal})`}</span>
                   </button>
                 </div>
               </div>

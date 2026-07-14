@@ -10,22 +10,27 @@ export default function QuickViewModal({
   onToggleWishlist,
   isWishlisted
 }) {
+  const isComplexVariant = product.variants && product.variants.length > 0 && typeof product.variants[0] === 'object';
+
   const [selectedVariant, setSelectedVariant] = useState(
-    product.variants && product.variants.length > 0 ? product.variants[0] : null
+    product.variants && product.variants.length > 0 && isComplexVariant ? product.variants[0] : null
   );
+
+  const currentPrice = isComplexVariant && selectedVariant ? selectedVariant.price : product.price;
+  const currentQty = isComplexVariant && selectedVariant ? selectedVariant.label : product.quantity;
 
   if (!product) return null;
 
   const handleAddClick = () => {
-    onAddToCart(product, selectedVariant);
+    onAddToCart(product, isComplexVariant && selectedVariant ? selectedVariant.label : selectedVariant);
   };
 
   const handleIncrement = () => {
-    onAddToCart(product, selectedVariant);
+    onAddToCart(product, isComplexVariant && selectedVariant ? selectedVariant.label : selectedVariant);
   };
 
   const handleDecrement = () => {
-    onRemoveFromCart(product, selectedVariant);
+    onRemoveFromCart(product, isComplexVariant && selectedVariant ? selectedVariant.label : selectedVariant);
   };
 
   return (
@@ -84,17 +89,17 @@ export default function QuickViewModal({
               <h2 className="text-2xl sm:text-3xl font-outfit font-black text-textDark dark:text-cream">
                 {product.name}
               </h2>
-              {selectedVariant && (
+              {selectedVariant && isComplexVariant && (
                 <p className="text-sm font-semibold text-primary dark:text-success-light mt-1">
-                  Selected Grain: <span className="underline">{selectedVariant}</span>
+                  Selected Variant: <span className="underline">{selectedVariant.label}</span>
                 </p>
               )}
             </div>
 
             {/* Price & Quantity */}
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-outfit font-black text-textDark dark:text-cream">₹{product.price || 80}</span>
-              <span className="text-sm text-textLight dark:text-cream/50">/ {product.quantity || '100g'}</span>
+              <span className="text-3xl font-outfit font-black text-textDark dark:text-cream">₹{currentPrice || 80}</span>
+              <span className="text-sm text-textLight dark:text-cream/50">/ {currentQty || '100g'}</span>
               <span className="text-xs text-success bg-success/10 px-2 py-0.5 rounded ml-2 font-bold">In Stock</span>
             </div>
 
@@ -136,26 +141,30 @@ export default function QuickViewModal({
               </div>
             )}
 
-            {/* Variant Dropdown if variants exist */}
-            {product.variants && product.variants.length > 0 && (
+            {/* Variant Dropdown if variants exist (Only render dynamic Quantity/Size selectors) */}
+            {product.variants && product.variants.length > 0 && isComplexVariant && (
               <div className="space-y-2">
                 <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40 block">
-                  Select Natural Millet Grain Type:
+                  Choose Quantity / Size:
                 </label>
                 <div className="grid grid-cols-3 gap-2">
-                  {product.variants.map((variant) => (
-                    <button
-                      key={variant}
-                      onClick={() => setSelectedVariant(variant)}
-                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
-                        selectedVariant === variant
-                          ? 'bg-primary text-cream border-primary shadow-premium'
-                          : 'bg-cream/40 dark:bg-darkCard border-accent/20 dark:border-accent/5 text-textDark dark:text-cream hover:bg-primary/10'
-                      }`}
-                    >
-                      {variant}
-                    </button>
-                  ))}
+                  {product.variants.map((variant) => {
+                    const label = variant.label;
+                    const isSelected = selectedVariant?.label === label;
+                    return (
+                      <button
+                        key={label}
+                        onClick={() => setSelectedVariant(variant)}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                          isSelected
+                            ? 'bg-primary text-cream border-primary shadow-premium'
+                            : 'bg-cream/40 dark:bg-darkCard border-accent/20 dark:border-accent/5 text-textDark dark:text-cream hover:bg-primary/10'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

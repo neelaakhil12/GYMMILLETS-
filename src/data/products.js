@@ -16,15 +16,9 @@ export const PRODUCTS = [
     price: 240,
     quantity: "500 g",
     variants: [
-      "Pearl Millet",
-      "Finger Millet",
-      "Kodo Millet",
-      "Browntop Millet",
-      "Barnyard Millet",
-      "Foxtail Millet",
-      "Little Millet",
-      "Proso Millets",
-      "Multi Millets"
+      { label: "250 g", price: 130 },
+      { label: "500 g", price: 240 },
+      { label: "1 kg", price: 450 }
     ],
     rating: 4.8,
     reviewsCount: 340,
@@ -40,15 +34,9 @@ export const PRODUCTS = [
     price: 240,
     quantity: "500 g",
     variants: [
-      "Pearl Millet",
-      "Finger Millet",
-      "Kodo Millet",
-      "Browntop Millet",
-      "Barnyard Millet",
-      "Foxtail Millet",
-      "Little Millet",
-      "Proso Millets",
-      "Multi Millets"
+      { label: "250 g", price: 130 },
+      { label: "500 g", price: 240 },
+      { label: "1 kg", price: 450 }
     ],
     rating: 4.9,
     reviewsCount: 412,
@@ -64,15 +52,9 @@ export const PRODUCTS = [
     price: 240,
     quantity: "500 g",
     variants: [
-      "Pearl Millet",
-      "Finger Millet",
-      "Kodo Millet",
-      "Browntop Millet",
-      "Barnyard Millet",
-      "Foxtail Millet",
-      "Little Millet",
-      "Proso Millets",
-      "Multi Millets"
+      { label: "250 g", price: 130 },
+      { label: "500 g", price: 240 },
+      { label: "1 kg", price: 450 }
     ],
     rating: 4.7,
     reviewsCount: 228,
@@ -88,15 +70,9 @@ export const PRODUCTS = [
     price: 240,
     quantity: "500 g",
     variants: [
-      "Pearl Millet",
-      "Finger Millet",
-      "Kodo Millet",
-      "Browntop Millet",
-      "Barnyard Millet",
-      "Foxtail Millet",
-      "Little Millet",
-      "Proso Millets",
-      "Multi Millets"
+      { label: "250 g", price: 130 },
+      { label: "500 g", price: 240 },
+      { label: "1 kg", price: 450 }
     ],
     rating: 4.6,
     reviewsCount: 194,
@@ -640,10 +616,9 @@ export const PRODUCTS = [
     price: 150,
     quantity: "2 Packets",
     variants: [
-      "Foxtail Millet",
-      "Finger Millet",
-      "Pearl Millet",
-      "Multi Millet"
+      { label: "1 Packet", price: 80 },
+      { label: "2 Packets", price: 150 },
+      { label: "4 Packets", price: 280 }
     ],
     rating: 4.9,
     reviewsCount: 520,
@@ -661,10 +636,9 @@ export const PRODUCTS = [
     price: 150,
     quantity: "2 Packets",
     variants: [
-      "Foxtail Millet",
-      "Finger Millet",
-      "Pearl Millet",
-      "Multi Millet"
+      { label: "1 Packet", price: 80 },
+      { label: "2 Packets", price: 150 },
+      { label: "4 Packets", price: 280 }
     ],
     rating: 4.8,
     reviewsCount: 298,

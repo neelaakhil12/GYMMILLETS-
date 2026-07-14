@@ -10,24 +10,26 @@ export default function ProductCard({
   isWishlisted,
   onQuickView
 }) {
+  const isComplexVariant = product.variants && product.variants.length > 0 && typeof product.variants[0] === 'object';
+
   const [selectedVariant, setSelectedVariant] = useState(
-    product.variants && product.variants.length > 0 ? product.variants[0] : null
+    product.variants && product.variants.length > 0 && isComplexVariant ? product.variants[0] : null
   );
   const [isHovered, setIsHovered] = useState(false);
 
   const handleAddClick = (e) => {
     e.stopPropagation();
-    onAddToCart(product, selectedVariant);
+    onAddToCart(product, isComplexVariant && selectedVariant ? selectedVariant.label : selectedVariant);
   };
 
   const handleIncrement = (e) => {
     e.stopPropagation();
-    onAddToCart(product, selectedVariant);
+    onAddToCart(product, isComplexVariant && selectedVariant ? selectedVariant.label : selectedVariant);
   };
 
   const handleDecrement = (e) => {
     e.stopPropagation();
-    onRemoveFromCart(product, selectedVariant);
+    onRemoveFromCart(product, isComplexVariant && selectedVariant ? selectedVariant.label : selectedVariant);
   };
 
   const handleWishlistClick = (e) => {
@@ -39,6 +41,9 @@ export default function ProductCard({
     e.stopPropagation();
     onQuickView(product);
   };
+
+  const currentPrice = isComplexVariant && selectedVariant ? selectedVariant.price : product.price;
+  const currentQty = isComplexVariant && selectedVariant ? selectedVariant.label : product.quantity;
 
   return (
     <div
@@ -109,22 +114,29 @@ export default function ProductCard({
           </p>
         </div>
 
-        {/* Variant Selection if variants exist */}
-        {product.variants && product.variants.length > 0 && (
+        {/* Variant Selection if variants exist (Only render dynamic Quantity/Size select options) */}
+        {product.variants && product.variants.length > 0 && isComplexVariant && (
           <div className="space-y-1">
             <label className="text-[10px] font-extrabold uppercase tracking-wide text-textLight dark:text-cream/40 block">
-              Choose Grain Variant:
+              Choose Quantity / Size:
             </label>
             <select
-              value={selectedVariant || ''}
-              onChange={(e) => setSelectedVariant(e.target.value)}
+              value={selectedVariant?.label || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                const found = product.variants.find(v => v.label === val);
+                setSelectedVariant(found || null);
+              }}
               className="w-full text-xs font-medium bg-cream/70 dark:bg-darkCard border border-accent/20 dark:border-accent/5 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-primary text-textDark dark:text-cream"
             >
-              {product.variants.map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
+              {product.variants.map((v) => {
+                const label = v.label;
+                return (
+                  <option key={label} value={label}>
+                    {label}
+                  </option>
+                );
+              })}
             </select>
           </div>
         )}
@@ -134,10 +146,10 @@ export default function ProductCard({
           {/* Price & Weight */}
           <div>
             <div className="flex items-baseline gap-1">
-              <span className="text-lg font-outfit font-black text-textDark dark:text-cream">₹{product.price || 80}</span>
-              <span className="text-xs text-textLight dark:text-cream/50">/ {product.quantity || '100g'}</span>
+              <span className="text-lg font-outfit font-black text-textDark dark:text-cream">₹{currentPrice || 80}</span>
+              <span className="text-xs text-textLight dark:text-cream/50">/ {currentQty || '100g'}</span>
             </div>
-            {product.price && product.price > 100 && (
+            {currentPrice && currentPrice > 100 && (
               <span className="text-[9px] font-bold text-success">
                 Save 15% Today
               </span>
