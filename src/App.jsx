@@ -1771,27 +1771,29 @@ export default function App() {
       )}
 
       {/* Floating WhatsApp Chat Button */}
-      <a
-        href="https://wa.me/917032653305?text=Hi%20GymMillets!%20I%27d%20love%20to%20order%20some%20healthy%20natural%20millet%20premixes."
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-24 md:bottom-8 right-6 md:right-8 z-50 group flex items-center gap-2 p-3.5 sm:p-4 rounded-full bg-[#25D366] text-white shadow-premium hover:shadow-premium-hover hover:bg-[#20ba5a] active:scale-95 transition-all duration-300 animate-bounce"
-        style={{ animationDuration: '3s' }}
-        title="Chat on WhatsApp"
-      >
-        {/* Pulsing Ripple Effect */}
-        <span className="absolute inset-0 rounded-full bg-[#25D366] opacity-40 animate-ping group-hover:hidden" />
-        
-        {/* Sleek Tooltip Expand on Hover */}
-        <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 ease-out whitespace-nowrap text-xs font-black uppercase tracking-wider text-white">
-          Chat on WhatsApp
-        </span>
+      {activeView !== 'admin' && (
+        <a
+          href="https://wa.me/917032653305?text=Hi%20GymMillets!%20I%27d%20love%20to%20order%20some%20healthy%20natural%20millet%20premixes."
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-24 md:bottom-8 right-6 md:right-8 z-50 group flex items-center gap-2 p-3.5 sm:p-4 rounded-full bg-[#25D366] text-white shadow-premium hover:shadow-premium-hover hover:bg-[#20ba5a] active:scale-95 transition-all duration-300 animate-bounce"
+          style={{ animationDuration: '3s' }}
+          title="Chat on WhatsApp"
+        >
+          {/* Pulsing Ripple Effect */}
+          <span className="absolute inset-0 rounded-full bg-[#25D366] opacity-40 animate-ping group-hover:hidden" />
+          
+          {/* Sleek Tooltip Expand on Hover */}
+          <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 ease-out whitespace-nowrap text-xs font-black uppercase tracking-wider text-white">
+            Chat on WhatsApp
+          </span>
 
-        {/* WhatsApp Icon */}
-        <svg viewBox="0 0 24 24" width="24" height="24" className="fill-current relative z-10">
-          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.863-9.73 0-2.597-1.012-5.04-2.85-6.88A9.73 9.73 0 0 0 12.008 1.24c-5.44 0-9.866 4.372-9.87 9.732-.001 1.69.467 3.334 1.354 4.79l-.997 3.646 3.734-.972zm11.111-6.8c-.29-.145-1.716-.847-1.978-.942-.262-.096-.453-.145-.642.145-.19.29-.738.942-.905 1.134-.167.19-.335.213-.625.068-1.579-.79-2.733-1.36-3.83-3.242-.29-.5-.29-.86-.145-1.005.13-.13.29-.338.435-.507.145-.169.19-.29.29-.483.097-.19.048-.362-.024-.507-.072-.145-.642-1.546-.88-2.124-.23-.556-.465-.48-.642-.486-.164-.006-.353-.007-.542-.007-.19 0-.498.072-.759.362-.262.29-1.002.978-1.002 2.387 0 1.41 1.028 2.77 1.171 2.964.143.195 2.024 3.09 4.901 4.33 1.62.698 2.885 1.113 3.878 1.43.836.265 1.597.228 2.198.138.67-.1 1.717-.7 1.957-1.376.24-.678.24-1.258.17-1.377-.073-.118-.262-.189-.553-.334z" />
-        </svg>
-      </a>
+          {/* WhatsApp Icon */}
+          <svg viewBox="0 0 24 24" width="24" height="24" className="fill-current relative z-10">
+            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.455L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.863-9.73 0-2.597-1.012-5.04-2.85-6.88A9.73 9.73 0 0 0 12.008 1.24c-5.44 0-9.866 4.372-9.87 9.732-.001 1.69.467 3.334 1.354 4.79l-.997 3.646 3.734-.972zm11.111-6.8c-.29-.145-1.716-.847-1.978-.942-.262-.096-.453-.145-.642.145-.19.29-.738.942-.905 1.134-.167.19-.335.213-.625.068-1.579-.79-2.733-1.36-3.83-3.242-.29-.5-.29-.86-.145-1.005.13-.13.29-.338.435-.507.145-.169.19-.29.29-.483.097-.19.048-.362-.024-.507-.072-.145-.642-1.546-.88-2.124-.23-.556-.465-.48-.642-.486-.164-.006-.353-.007-.542-.007-.19 0-.498.072-.759.362-.262.29-1.002.978-1.002 2.387 0 1.41 1.028 2.77 1.171 2.964.143.195 2.024 3.09 4.901 4.33 1.62.698 2.885 1.113 3.878 1.43.836.265 1.597.228 2.198.138.67-.1 1.717-.7 1.957-1.376.24-.678.24-1.258.17-1.377-.073-.118-.262-.189-.553-.334z" />
+          </svg>
+        </a>
+      )}
 
       {/* Sticky Mobile Bottom Cart Summary (Swiggy Style Overlay on mobile) */}
       {cartItems.length > 0 && activeView !== 'checkout' && activeView !== 'order-tracking' && (
@@ -1815,7 +1817,7 @@ export default function App() {
       )}
 
       {/* Dynamic Animated Splash Screen Overlay */}
-      {showSplash && (
+      {showSplash && activeView !== 'admin' && (
         <Splash onComplete={() => setShowSplash(false)} />
       )}
 

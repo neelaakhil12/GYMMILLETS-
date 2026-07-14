@@ -137,8 +137,8 @@ app.post('/api/admin/forgot-password', async (req, res) => {
   const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
   resetTokenStore.set(token, { expiresAt });
 
-  const base = (siteUrl || 'http://localhost:5173').replace(/\/$/, '');
-  const resetLink = `${base}/adminlogin?reset_token=${token}`;
+  const base = (siteUrl || 'http://localhost:5173/adminlogin').replace(/\/$/, '');
+  const resetLink = `${base}?reset_token=${token}`;
 
   const mailOptions = {
     from: process.env.SMTP_FROM || `"GymMillets Admin" <${process.env.SMTP_USER}>`,
