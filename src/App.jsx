@@ -268,6 +268,22 @@ export default function App() {
             return p;
           });
           setProducts(upgraded);
+          
+          // Dynamically detect any categories from database products that aren't in managedCategories
+          setManagedCategories(prev => {
+            const existingNames = new Set(prev.map(c => c.name.toLowerCase()));
+            const toAdd = [];
+            upgraded.forEach(p => {
+              if (p.category && !existingNames.has(p.category.toLowerCase())) {
+                existingNames.add(p.category.toLowerCase());
+                toAdd.push({
+                  name: p.category,
+                  image: p.image || '/cat-ready-mix.png'
+                });
+              }
+            });
+            return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+          });
         }
       })
       .catch(() => { /* Supabase unavailable — static PRODUCTS already in state */ });
