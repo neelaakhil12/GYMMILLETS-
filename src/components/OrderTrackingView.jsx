@@ -170,14 +170,14 @@ export default function OrderTrackingView({ activeOrder, setActiveView }) {
 
             <div className="flex gap-2">
               <a
-                href="tel:+919876543210"
+                href="tel:+917032653305"
                 className="p-3 bg-white dark:bg-[#252525] hover:bg-primary hover:text-cream border border-accent/15 text-primary rounded-full transition-colors"
                 title="Call Executive"
               >
                 <Phone size={16} />
               </a>
               <a
-                href="https://wa.me/919876543210"
+                href="https://wa.me/917032653305"
                 target="_blank"
                 rel="noreferrer"
                 className="p-3 bg-white dark:bg-[#252525] hover:bg-success hover:text-cream border border-accent/15 text-success rounded-full transition-colors"

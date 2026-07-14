@@ -147,8 +147,8 @@ export default function Footer({ setActiveView, setSelectedCategory, onAddToast 
               </div>
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-widest text-cream/40 mb-0.5">Phone</p>
-                <a href="tel:+919876543210" className="text-xs sm:text-sm font-semibold text-cream/70 hover:text-cream transition-colors">
-                  +91 98765 43210
+                <a href="tel:+917032653305" className="text-xs sm:text-sm font-semibold text-cream/70 hover:text-cream transition-colors">
+                  +91 70326 53305
                 </a>
               </div>
             </li>

@@ -1333,7 +1333,7 @@ export default function App() {
 
             <div className="w-full space-y-3 mt-8">
               <a
-                href={`https://wa.me/919876543210?text=${encodeURIComponent(
+                href={`https://wa.me/917032653305?text=${encodeURIComponent(
                   `GymMillets - Order Received Successfully! 🌾\n\n` +
                   `Order ID: ${activeOrder.id}\n` +
                   `Total Amount: ₹${activeOrder.total}\n` +
@@ -1586,8 +1586,8 @@ export default function App() {
                       </div>
                       <div>
                         <p className="text-[9px] uppercase tracking-widest text-white/40 mb-0.5">Telephone Hotlines</p>
-                        <a href="tel:+919876543210" className="text-xs font-semibold text-cream/80 hover:text-white transition-colors block">
-                          +91 98765 43210
+                        <a href="tel:+917032653305" className="text-xs font-semibold text-cream/80 hover:text-white transition-colors block">
+                          +91 70326 53305
                         </a>
                       </div>
                     </li>
@@ -1756,7 +1756,7 @@ export default function App() {
 
       {/* Floating WhatsApp Chat Button */}
       <a
-        href="https://wa.me/919876543210?text=Hi%20GymMillets!%20I%27d%20love%20to%20order%20some%20healthy%20natural%20millet%20premixes."
+        href="https://wa.me/917032653305?text=Hi%20GymMillets!%20I%27d%20love%20to%20order%20some%20healthy%20natural%20millet%20premixes."
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-24 md:bottom-8 right-6 md:right-8 z-50 group flex items-center gap-2 p-3.5 sm:p-4 rounded-full bg-[#25D366] text-white shadow-premium hover:shadow-premium-hover hover:bg-[#20ba5a] active:scale-95 transition-all duration-300 animate-bounce"
