@@ -164,9 +164,9 @@ export default function Navbar({
               ) : (
                 <button
                   onClick={openLoginModal}
-                  className="flex items-center gap-1.5 px-4.5 py-2 rounded-full bg-cream text-primary hover:bg-cream/90 transition-all duration-300 shadow-premium font-medium text-sm"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-cream text-primary hover:bg-cream/90 transition-all duration-300 shadow-premium font-bold text-sm"
                 >
-                  <User size={16} />
+                  <User size={18} />
                   <span>Login</span>
                 </button>
               )}
