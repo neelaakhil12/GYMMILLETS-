@@ -94,6 +94,81 @@ app.post('/api/verify-otp', (req, res) => {
   res.json({ success: true });
 });
 
+// ─── ADMIN PASSWORD RECOVERY (SMTP) ──────────────────────────────────────────
+const adminOtpStore = new Map();
+
+app.post('/api/admin/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  const normalized = email.trim().toLowerCase();
+  if (normalized !== 'admin@gymmillets.com' && normalized !== 'aarunika555@gmail.com') {
+    return res.status(400).json({ error: 'Invalid admin email address' });
+  }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+  adminOtpStore.set(normalized, { code, expiresAt });
+
+  const mailOptions = {
+    from: process.env.SMTP_FROM || `"GymMillets Admin" <${process.env.SMTP_USER}>`,
+    to: 'aarunika555@gmail.com', // Always forward the authentication code to aarunika555@gmail.com
+    subject: 'GymMillets Admin Password Recovery OTP',
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 25px; color: #333; max-width: 500px; margin: auto; border: 1px solid #e2e8f0; border-radius: 16px; background: #0c0d12; color: #f3f4f6;">
+        <h2 style="color: #4caf50; text-align: center; font-size: 24px; margin-bottom: 20px;">GymMillets Admin Security</h2>
+        <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">Hello Admin,</p>
+        <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">A request was made to verify your identity to access the GymMillets Admin Control Panel. Use the following security code to authenticate:</p>
+        <div style="font-size: 32px; font-weight: bold; background: rgba(76,175,80,0.1); border: 1px solid rgba(76,175,80,0.25); color: #4caf50; padding: 18px; text-align: center; border-radius: 12px; margin: 25px 0; letter-spacing: 6px; font-family: monospace;">
+          ${code}
+        </div>
+        <p style="font-size: 13px; color: #94a3b8; line-height: 1.5;">This security verification code is valid for 10 minutes. If you did not request this code, please check your admin security credentials immediately.</p>
+        <br/>
+        <p style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; font-size: 11px; color: #64748b; text-align: center;">
+          GymMillets Security HQ • Restricted Access
+        </p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    res.json({ success: true, message: 'OTP sent to aarunika555@gmail.com' });
+  } catch (error) {
+    console.error('Nodemailer error for admin recovery:', error);
+    res.status(500).json({ error: 'Failed to send verification email: ' + error.message });
+  }
+});
+
+app.post('/api/admin/verify-otp', (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) {
+    return res.status(400).json({ error: 'Email and OTP code are required' });
+  }
+
+  const normalized = email.trim().toLowerCase();
+  const stored = adminOtpStore.get(normalized);
+  if (!stored) {
+    return res.status(400).json({ error: 'No OTP requested for this admin email' });
+  }
+
+  if (Date.now() > stored.expiresAt) {
+    adminOtpStore.delete(normalized);
+    return res.status(400).json({ error: 'Verification code has expired' });
+  }
+
+  if (stored.code !== otp.trim()) {
+    return res.status(400).json({ error: 'Invalid verification code' });
+  }
+
+  // Success! Clear OTP
+  adminOtpStore.delete(normalized);
+  res.json({ success: true });
+});
+
+
 app.post('/api/create-razorpay-order', async (req, res) => {
   const { amount } = req.body;
   if (!amount) {
