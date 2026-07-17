@@ -320,7 +320,8 @@ export default function App() {
     else if (activeView === 'account') expected = '/account';
 
     if (path !== expected) {
-      window.history.pushState(null, '', expected);
+      const search = window.location.search;
+      window.history.pushState(null, '', expected + search);
     }
   }, [activeView]);
 

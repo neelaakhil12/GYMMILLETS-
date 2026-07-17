@@ -68,6 +68,60 @@ async function saveAdminPassword(newPassword) {
   }
 }
 
+// Store reset tokens in memory as local fallback
+const localResetTokenStore = new Map();
+
+async function saveResetToken(token, expiresAt) {
+  try {
+    await supabase.from('admin_config').upsert([
+      { key: 'reset_token', value: token },
+      { key: 'reset_token_expires', value: expiresAt.toString() }
+    ]);
+  } catch (err) {
+    console.warn('Could not save reset token to Supabase, falling back to local memory:', err.message);
+  }
+  localResetTokenStore.set(token, { expiresAt });
+}
+
+async function validateResetToken(token) {
+  // Try Supabase first
+  try {
+    const { data: tokenData } = await supabase
+      .from('admin_config')
+      .select('value')
+      .eq('key', 'reset_token')
+      .maybeSingle();
+
+    const { data: expiresData } = await supabase
+      .from('admin_config')
+      .select('value')
+      .eq('key', 'reset_token_expires')
+      .maybeSingle();
+
+    if (tokenData && expiresData && tokenData.value === token) {
+      return { valid: true, expiresAt: parseInt(expiresData.value, 10) };
+    }
+  } catch (err) {
+    console.warn('Could not validate reset token from Supabase:', err.message);
+  }
+
+  // Fallback to local memory
+  const stored = localResetTokenStore.get(token);
+  if (stored) {
+    return { valid: true, expiresAt: stored.expiresAt };
+  }
+  return { valid: false };
+}
+
+async function clearResetToken(token) {
+  try {
+    await supabase.from('admin_config').delete().in('key', ['reset_token', 'reset_token_expires']);
+  } catch (err) {
+    console.warn('Could not clear reset token in Supabase:', err.message);
+  }
+  localResetTokenStore.delete(token);
+}
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -158,7 +212,6 @@ app.post('/api/verify-otp', (req, res) => {
 });
 
 // ─── ADMIN PASSWORD RESET (Email Link) ───────────────────────────────────────
-const resetTokenStore = new Map(); // token → { expiresAt }
 
 // Get current admin password
 app.get('/api/admin/get-password', async (req, res) => {
@@ -179,7 +232,7 @@ app.post('/api/admin/forgot-password', async (req, res) => {
   // Generate a secure random token
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
-  resetTokenStore.set(token, { expiresAt });
+  await saveResetToken(token, expiresAt);
 
   const base = (siteUrl || 'http://localhost:5173/adminlogin').replace(/\/$/, '');
   const resetLink = `${base}?reset_token=${token}`;
@@ -217,10 +270,10 @@ app.post('/api/admin/forgot-password', async (req, res) => {
 });
 
 // Validate a reset token (frontend calls this to check token before showing form)
-app.get('/api/admin/validate-reset-token', (req, res) => {
+app.get('/api/admin/validate-reset-token', async (req, res) => {
   const { token } = req.query;
-  const stored = resetTokenStore.get(token);
-  if (!stored || Date.now() > stored.expiresAt) {
+  const result = await validateResetToken(token);
+  if (!result.valid || Date.now() > result.expiresAt) {
     return res.status(400).json({ valid: false, error: 'Reset link is invalid or has expired.' });
   }
   res.json({ valid: true });
@@ -236,14 +289,14 @@ app.post('/api/admin/reset-password', async (req, res) => {
     return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
 
-  const stored = resetTokenStore.get(token);
-  if (!stored || Date.now() > stored.expiresAt) {
+  const result = await validateResetToken(token);
+  if (!result.valid || Date.now() > result.expiresAt) {
     return res.status(400).json({ error: 'Reset link is invalid or has expired.' });
   }
 
   // Save new password
   await saveAdminPassword(newPassword);
-  resetTokenStore.delete(token);
+  await clearResetToken(token);
 
   res.json({ success: true });
 });
