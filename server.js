@@ -13,6 +13,9 @@ const ADMIN_CONFIG_PATH = path.join(__dirname, 'admin_config.json');
 
 // Load or init admin config
 function loadAdminConfig() {
+  if (process.env.ADMIN_PASSWORD) {
+    return { password: process.env.ADMIN_PASSWORD };
+  }
   try {
     return JSON.parse(fs.readFileSync(ADMIN_CONFIG_PATH, 'utf8'));
   } catch {
