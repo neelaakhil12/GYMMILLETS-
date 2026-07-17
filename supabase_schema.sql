@@ -319,3 +319,25 @@ INSERT INTO public.products (id, name, category, price, quantity, badge, descrip
  '/ragi-natukodi-curry.png', 4.8, 148, '[]', '{"protein":"27.5g","fiber":"11.0g","carbs":"49g","fat":"6.9g"}')
 
 ON CONFLICT (id) DO NOTHING;
+
+
+-- ─────────────────────────────────────────────
+-- 6. ADMIN CONFIG TABLE
+-- ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.admin_config (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE public.admin_config ENABLE ROW LEVEL SECURITY;
+
+-- Allow read/write access to the table
+DROP POLICY IF EXISTS "Allow all" ON public.admin_config;
+CREATE POLICY "Allow all" ON public.admin_config FOR ALL USING (true) WITH CHECK (true);
+
+-- Insert the default password (9989551305)
+INSERT INTO public.admin_config (key, value)
+VALUES ('password', '9989551305')
+ON CONFLICT (key) DO NOTHING;
+

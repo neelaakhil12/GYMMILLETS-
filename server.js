@@ -7,25 +7,62 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createClient } from '@supabase/supabase-js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ADMIN_CONFIG_PATH = path.join(__dirname, 'admin_config.json');
 
-// Load or init admin config
-function loadAdminConfig() {
-  if (process.env.ADMIN_PASSWORD) {
-    return { password: process.env.ADMIN_PASSWORD };
-  }
+// Initialize Supabase Client
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Load password from Supabase, fallback to admin_config.json, env variable, or default
+async function getAdminPassword() {
   try {
-    return JSON.parse(fs.readFileSync(ADMIN_CONFIG_PATH, 'utf8'));
-  } catch {
-    return { password: 'GymAdmin@2026' };
+    const { data, error } = await supabase
+      .from('admin_config')
+      .select('value')
+      .eq('key', 'password')
+      .single();
+    
+    if (data && data.value) {
+      return data.value;
+    }
+  } catch (err) {
+    console.warn('Could not load password from Supabase admin_config table:', err.message);
   }
+
+  // Fallbacks:
+  if (process.env.ADMIN_PASSWORD) {
+    return process.env.ADMIN_PASSWORD;
+  }
+  
+  try {
+    const localConfig = JSON.parse(fs.readFileSync(ADMIN_CONFIG_PATH, 'utf8'));
+    if (localConfig && localConfig.password) {
+      return localConfig.password;
+    }
+  } catch {}
+  
+  return 'GymAdmin@2026';
 }
 
-function saveAdminConfig(config) {
+// Save password to Supabase and fallback to admin_config.json
+async function saveAdminPassword(newPassword) {
+  // Update Supabase
   try {
-    fs.writeFileSync(ADMIN_CONFIG_PATH, JSON.stringify(config, null, 2));
+    const { error } = await supabase
+      .from('admin_config')
+      .upsert({ key: 'password', value: newPassword });
+    if (error) console.error('Supabase save error:', error);
+  } catch (err) {
+    console.error('Failed to save password to Supabase:', err.message);
+  }
+
+  // Fallback to writing local file
+  try {
+    fs.writeFileSync(ADMIN_CONFIG_PATH, JSON.stringify({ password: newPassword }, null, 2));
   } catch (err) {
     console.error('Failed to save admin config to disk:', err);
   }
@@ -124,9 +161,9 @@ app.post('/api/verify-otp', (req, res) => {
 const resetTokenStore = new Map(); // token → { expiresAt }
 
 // Get current admin password
-app.get('/api/admin/get-password', (req, res) => {
-  const config = loadAdminConfig();
-  res.json({ password: config.password });
+app.get('/api/admin/get-password', async (req, res) => {
+  const password = await getAdminPassword();
+  res.json({ password });
 });
 
 // Send password reset link to aarunika555@gmail.com
@@ -190,7 +227,7 @@ app.get('/api/admin/validate-reset-token', (req, res) => {
 });
 
 // Save the new password
-app.post('/api/admin/reset-password', (req, res) => {
+app.post('/api/admin/reset-password', async (req, res) => {
   const { token, newPassword } = req.body;
   if (!token || !newPassword) {
     return res.status(400).json({ error: 'Token and new password are required' });
@@ -205,9 +242,7 @@ app.post('/api/admin/reset-password', (req, res) => {
   }
 
   // Save new password
-  const config = loadAdminConfig();
-  config.password = newPassword;
-  saveAdminConfig(config);
+  await saveAdminPassword(newPassword);
   resetTokenStore.delete(token);
 
   res.json({ success: true });
