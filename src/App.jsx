@@ -28,6 +28,7 @@ import Footer from './components/Footer';
 import Toast from './components/Toast';
 import AnimatedCounter from './components/AnimatedCounter';
 import { supabase } from './lib/supabase';
+import { API_BASE } from './lib/config';
 
 // Importing Icons for UI
 import {
@@ -463,7 +464,7 @@ export default function App() {
     }
     setAuthLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/send-otp', {
+      const response = await fetch(`${API_BASE}/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: loginForm.email })
@@ -490,7 +491,7 @@ export default function App() {
     }
     setAuthLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/verify-otp', {
+      const response = await fetch(`${API_BASE}/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: loginForm.email, otp: otpToken })

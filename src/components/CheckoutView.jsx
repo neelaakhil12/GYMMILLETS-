@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Check, CreditCard, ShieldCheck, MapPin, Truck, HelpCircle } from 'lucide-react';
+import { API_BASE } from '../lib/config';
 
 export default function CheckoutView({
   cartItems,
@@ -165,7 +166,7 @@ export default function CheckoutView({
 
     try {
       // Step 1: Create server-side order
-      const response = await fetch('http://localhost:5000/api/create-razorpay-order', {
+      const response = await fetch(`${API_BASE}/create-razorpay-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: grandTotal })
@@ -187,7 +188,7 @@ export default function CheckoutView({
         handler: async function (paymentRes) {
           try {
             // Step 3: Verify payment signature
-            const verifyRes = await fetch('http://localhost:5000/api/verify-razorpay-payment', {
+            const verifyRes = await fetch(`${API_BASE}/verify-razorpay-payment`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

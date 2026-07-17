@@ -21,7 +21,11 @@ function loadAdminConfig() {
 }
 
 function saveAdminConfig(config) {
-  fs.writeFileSync(ADMIN_CONFIG_PATH, JSON.stringify(config, null, 2));
+  try {
+    fs.writeFileSync(ADMIN_CONFIG_PATH, JSON.stringify(config, null, 2));
+  } catch (err) {
+    console.error('Failed to save admin config to disk:', err);
+  }
 }
 
 const app = express();
@@ -247,7 +251,11 @@ app.post('/api/verify-razorpay-payment', (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
-});
+export default app;
+
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Backend server running on http://localhost:${PORT}`);
+  });
+}

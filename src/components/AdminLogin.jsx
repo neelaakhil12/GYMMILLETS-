@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, Mail, Eye, EyeOff, Shield, AlertCircle, ArrowLeft, CheckCircle } from 'lucide-react';
+import { API_BASE } from '../lib/config';
 
 const ADMIN_EMAIL = 'admin@gymmillets.com';
 
@@ -32,7 +33,7 @@ export default function AdminLogin({ onLogin, onBack }) {
     const token = params.get('reset_token');
 
     // Fetch current password from server (may have been updated)
-    fetch('http://localhost:5000/api/admin/get-password')
+    fetch(`${API_BASE}/admin/get-password`)
       .then(r => r.json())
       .then(d => { if (d.password) setAdminPassword(d.password); })
       .catch(() => {});
@@ -40,7 +41,7 @@ export default function AdminLogin({ onLogin, onBack }) {
     if (token) {
       setResetToken(token);
       setResetTokenChecking(true);
-      fetch(`http://localhost:5000/api/admin/validate-reset-token?token=${token}`)
+      fetch(`${API_BASE}/admin/validate-reset-token?token=${token}`)
         .then(r => r.json())
         .then(d => {
           setResetTokenValid(!!d.valid);
@@ -75,7 +76,7 @@ export default function AdminLogin({ onLogin, onBack }) {
     setError('');
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/admin/forgot-password', {
+      const res = await fetch(`${API_BASE}/admin/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: forgotEmail, siteUrl: window.location.origin + '/adminlogin' })
@@ -104,7 +105,7 @@ export default function AdminLogin({ onLogin, onBack }) {
     }
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/admin/reset-password', {
+      const res = await fetch(`${API_BASE}/admin/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: resetToken, newPassword })
