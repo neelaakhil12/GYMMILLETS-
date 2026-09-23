@@ -7,6 +7,7 @@ import {
   LayoutGrid, LogOut, AlertTriangle, RefreshCw, Image
 } from 'lucide-react';
 import { uploadImageToCloudinary } from '../lib/cloudinary';
+import { supabase } from '../lib/supabase';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -98,6 +99,53 @@ export default function AdminPanel({
       onAddToast('Tracking URL updated in session.', 'success');
     }
   };
+
+  // ── Database Keep-Alive State ─────────────────────────────────────────────
+  const [isPingingDb, setIsPingingDb] = useState(false);
+  const [lastPingTime, setLastPingTime] = useState(null);
+  const [pingLatency, setPingLatency] = useState(null);
+
+  const handleManualPing = async (silent = false) => {
+    setIsPingingDb(true);
+    const start = Date.now();
+    try {
+      const res = await fetch('/api/keep-alive');
+      const data = await res.json();
+      const latency = data.latencyMs || (Date.now() - start);
+      setPingLatency(latency);
+      setLastPingTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      if (!silent) {
+        if (data.success || res.ok) {
+          onAddToast(`Supabase awake & healthy (${latency}ms)! Sleep timer reset.`, 'success');
+        } else {
+          onAddToast(`Supabase ping warning: ${data.message || 'Check database'}`, 'warning');
+        }
+      }
+    } catch {
+      // Direct query fallback for local dev or when backend server is off
+      try {
+        const { error } = await supabase.from('products').select('id').limit(1);
+        const latency = Date.now() - start;
+        setPingLatency(latency);
+        setLastPingTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        if (error) throw error;
+        if (!silent) {
+          onAddToast(`Direct Supabase ping OK (${latency}ms)! Sleep timer reset.`, 'success');
+        }
+      } catch (directErr) {
+        if (!silent) {
+          onAddToast(`Database ping failed: ${directErr.message}`, 'warning');
+        }
+      }
+    } finally {
+      setIsPingingDb(false);
+    }
+  };
+
+  // Automatically keep DB awake whenever admin dashboard is opened
+  useEffect(() => {
+    handleManualPing(true);
+  }, []);
 
   // ── Pricing & Quantity Configuration State ───────────────────────────────
   const [pricingTab, setPricingTab] = useState('solid'); // solid | liquid | pieces | packets
@@ -949,6 +997,36 @@ export default function AdminPanel({
                 )}
               </button>
             ))}
+          </Card>
+
+          {/* Database Keep-Alive Widget */}
+          <Card className="p-3.5 mt-3 space-y-2.5 bg-gradient-to-br from-white to-cream/30 dark:from-darkCard dark:to-[#171a17] border border-accent/15">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-bold text-textDark dark:text-cream">Supabase DB</span>
+              </div>
+              <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                Active
+              </span>
+            </div>
+            <p className="text-[10px] text-textLight dark:text-cream/50 leading-tight">
+              Auto-ping enabled via GitHub Action & Vercel Cron.
+            </p>
+            <button
+              onClick={() => handleManualPing(false)}
+              disabled={isPingingDb}
+              className="w-full py-1.5 px-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 dark:bg-success/15 dark:hover:bg-success/25 text-primary dark:text-success-light text-xs font-bold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+              title="Ping Supabase database to reset the 7-day inactivity pause clock"
+            >
+              <RefreshCw size={11} className={isPingingDb ? 'animate-spin' : ''} />
+              <span>{isPingingDb ? 'Pinging...' : 'Ping DB Now'}</span>
+            </button>
+            {lastPingTime && (
+              <div className="text-[9px] text-textLight/70 dark:text-cream/40 text-center font-medium">
+                Last ping: {lastPingTime} {pingLatency ? `(${pingLatency}ms)` : ''}
+              </div>
+            )}
           </Card>
         </aside>
 

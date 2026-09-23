@@ -342,6 +342,51 @@ app.post('/api/verify-razorpay-payment', (req, res) => {
   }
 });
 
+// Keep-Alive endpoint to prevent Supabase database from pausing / sleeping
+app.all('/api/keep-alive', async (req, res) => {
+  const startTime = Date.now();
+  try {
+    // 1. Try querying products table to reset Supabase 7-day inactivity timer
+    let { data, error } = await supabase
+      .from('products')
+      .select('id')
+      .limit(1);
+
+    // 2. Fallback to admin_config if products table query had issues
+    if (error) {
+      const fallback = await supabase
+        .from('admin_config')
+        .select('key')
+        .limit(1);
+      error = fallback.error;
+      data = fallback.data;
+    }
+
+    if (error) {
+      throw error;
+    }
+
+    const latencyMs = Date.now() - startTime;
+    return res.status(200).json({
+      success: true,
+      database: 'supabase',
+      status: 'active',
+      message: 'Supabase keep-alive ping successful. Inactivity timer reset.',
+      latencyMs,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    console.error('Supabase keep-alive ping failed:', err.message);
+    return res.status(500).json({
+      success: false,
+      database: 'supabase',
+      status: 'error',
+      message: 'Failed to ping Supabase: ' + err.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 export default app;
 
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {

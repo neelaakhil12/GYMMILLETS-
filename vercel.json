@@ -8,5 +8,11 @@
     "api/index.js": {
       "includeFiles": "admin_config.json"
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/keep-alive",
+      "schedule": "0 8 * * *"
+    }
+  ]
 }

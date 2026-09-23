@@ -1,0 +1,60 @@
+name: Supabase Database Keep Alive
+
+on:
+  schedule:
+    # Runs at 05:00 UTC every 2 days (Supabase pauses after 7 days of inactivity)
+    - cron: '0 5 */2 * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab anytime
+
+jobs:
+  keep-alive:
+    name: Ping Supabase Database
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping Supabase to Reset Inactivity Timer
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://pzbibdvktzswzpwdutcz.supabase.co' }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6YmliZHZrdHpzd3pwd2R1dGN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MTMwMzcsImV4cCI6MjA5OTQ4OTAzN30.rpRnkrheTMPNxT7DjgW-UcHwMJYiA_yzB3mSSnRhWuM' }}
+        run: |
+          echo "=================================================="
+          echo "Triggering Supabase Keep-Alive Query via GitHub Actions"
+          echo "Current UTC Time: $(date -u)"
+          echo "Target Supabase Host: $SUPABASE_URL"
+          echo "=================================================="
+
+          # Ping products table
+          echo "Executing query on 'products' table..."
+          HTTP_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\nLATENCY:%{time_total}s" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            "$SUPABASE_URL/rest/v1/products?select=id&limit=1")
+
+          HTTP_BODY=$(echo "$HTTP_RESPONSE" | sed -e '/HTTP_STATUS:/,$d')
+          HTTP_STATUS=$(echo "$HTTP_RESPONSE" | tr -d '\r' | sed -n 's/^HTTP_STATUS://p')
+          LATENCY=$(echo "$HTTP_RESPONSE" | tr -d '\r' | sed -n 's/^LATENCY://p')
+
+          echo "Supabase Response Status: $HTTP_STATUS"
+          echo "Query Latency: $LATENCY"
+          echo "Response Body: $HTTP_BODY"
+
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "SUCCESS: Supabase database is active and awake! 7-day inactivity pause counter has been reset."
+          else
+            echo "Primary ping returned non-200. Trying fallback query on 'admin_config' table..."
+            FALLBACK_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+              "$SUPABASE_URL/rest/v1/admin_config?select=key&limit=1")
+            
+            FB_STATUS=$(echo "$FALLBACK_RESPONSE" | tr -d '\r' | sed -n 's/^HTTP_STATUS://p')
+            echo "Fallback Response Status: $FB_STATUS"
+            if [ "$FB_STATUS" -ge 200 ] && [ "$FB_STATUS" -lt 300 ]; then
+              echo "SUCCESS: Fallback ping succeeded. Supabase is active."
+            else
+              echo "ERROR: Failed to reach Supabase. Status: $FB_STATUS"
+              exit 1
+            fi
+          fi
+          echo "=================================================="
