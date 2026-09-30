@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { PRODUCTS, PRODUCT_CATEGORIES } from '../src/data/products.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DOMAIN = 'https://tenigymillets.com';
+const DOMAIN = 'https://www.tenigymillets.com';
 const today = new Date().toISOString().split('T')[0];
 
 const staticPages = [

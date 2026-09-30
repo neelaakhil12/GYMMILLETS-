@@ -4,4 +4,4 @@ Disallow: /admin
 Disallow: /adminlogin
 Disallow: /api/
 
-Sitemap: https://tenigymillets.com/sitemap.xml
+Sitemap: https://www.tenigymillets.com/sitemap.xml
