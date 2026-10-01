@@ -6,8 +6,8 @@ import { PRODUCTS, TESTIMONIALS, WHY_CHOOSE_US, COUPONS } from './data/products'
 
 // Supabase DB helpers
 import {
-  dbLoadProducts, dbAddProduct, dbUpdateProduct, dbDeleteProduct,
-  dbLoadOrders, dbSaveOrder, dbUpdateOrderStatus, dbUpdateOrderShippingDetails,
+  dbLoadProducts, dbAddProduct, dbUpdateProduct, dbDeleteProduct, subscribeToProducts,
+  dbLoadOrders, dbSaveOrder, dbUpdateOrderStatus, dbUpdateOrderShippingDetails, subscribeToOrders,
   dbLoadCoupons, dbAddCoupon, dbDeleteCoupon
 } from './hooks/useSupabase';
 import Navbar from './components/Navbar';
@@ -215,30 +215,8 @@ export default function App() {
   const [otpSent, setOtpSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
 
-  // Active Orders (persisted in localStorage + synced with Supabase)
-  const [orders, setOrders] = useState(() => {
-    try {
-      const saved = localStorage.getItem('gymmillets_orders');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch (e) {}
-    return [
-      {
-        id: "GM-9921",
-        items: [
-          { id: "rm-kichdi", name: "Kichdi Premix", variant: "Pearl Millet", price: 240, quantity: 1, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?q=80&w=600&auto=format&fit=crop" }
-        ],
-        shippingDetails: { name: "Coach Akhil", mobile: "9876543210", address: "Fit House Gym, MG Road", city: "Bangalore", pincode: "560001", userEmail: "akhil@gymmillets.com" },
-        paymentDetails: { method: "Card Paid" },
-        total: 292,
-        status: "Delivered",
-        userEmail: "akhil@gymmillets.com",
-        createdAt: "2026-05-17T10:30:00.000Z"
-      }
-    ];
-  });
+  // Orders State — strictly read from and written to Supabase as single source of truth
+  const [orders, setOrders] = useState([]);
 
   const [activeOrder, setActiveOrder] = useState(() => {
     try {
@@ -247,14 +225,6 @@ export default function App() {
     } catch (e) {}
     return null;
   });
-
-  useEffect(() => {
-    try {
-      if (Array.isArray(orders) && orders.length > 0) {
-        localStorage.setItem('gymmillets_orders', JSON.stringify(orders));
-      }
-    } catch (e) {}
-  }, [orders]);
 
   useEffect(() => {
     try {
@@ -329,42 +299,54 @@ export default function App() {
       })
       .catch(() => { /* Supabase unavailable — static PRODUCTS already in state */ });
 
-    // Orders: merge Supabase orders with local orders without wiping local orders
+    // Orders: load directly from Supabase (single source of truth)
     dbLoadOrders()
       .then(rows => {
-        if (rows && rows.length > 0) {
-          setOrders(prev => {
-            const map = new Map();
-            // Start with current local orders
-            prev.forEach(o => { if (o && o.id) map.set(o.id, o); });
-            // Merge with remote orders
-            rows.forEach(r => {
-              if (r && r.id) {
-                const existing = map.get(r.id);
-                map.set(r.id, {
-                  ...r,
-                  userEmail: r.userEmail || existing?.userEmail || existing?.shippingDetails?.userEmail || '',
-                  shippingDetails: {
-                    ...(existing?.shippingDetails || {}),
-                    ...(r.shippingDetails || {}),
-                    userEmail: r.shippingDetails?.userEmail || existing?.shippingDetails?.userEmail || existing?.userEmail || ''
-                  }
-                });
-              }
-            });
-            const merged = Array.from(map.values());
-            try { localStorage.setItem('gymmillets_orders', JSON.stringify(merged)); } catch (e) {}
-            return merged;
-          });
+        if (Array.isArray(rows)) {
+          setOrders(rows);
         }
       })
-      .catch(() => { /* keep in-memory / localStorage orders */ });
+      .catch(err => {
+        console.error('Error loading orders from Supabase:', err);
+      });
+
+    // Realtime subscriptions: instantly reflect orders and products changes from Supabase
+    const unsubOrders = subscribeToOrders(() => {
+      dbLoadOrders().then(rows => {
+        if (Array.isArray(rows)) setOrders(rows);
+      }).catch(() => {});
+    });
+
+    const unsubProducts = subscribeToProducts(() => {
+      dbLoadProducts().then(rows => {
+        if (Array.isArray(rows) && rows.length > 0) setProducts(rows);
+      }).catch(() => {});
+    });
 
     // Coupons: if Supabase has coupons use them; otherwise keep static COUPONS
     dbLoadCoupons()
       .then(rows => { if (rows && rows.length > 0) setDbCoupons(rows); })
       .catch(() => { /* keep static COUPONS */ });
+
+    return () => {
+      if (unsubOrders) unsubOrders();
+      if (unsubProducts) unsubProducts();
+    };
   }, []);
+
+  // Helper to re-fetch orders directly from Supabase anytime
+  const refreshOrdersFromDb = async () => {
+    try {
+      const rows = await dbLoadOrders();
+      if (Array.isArray(rows)) {
+        setOrders(rows);
+        return rows;
+      }
+    } catch (err) {
+      console.error('Failed to refresh orders from Supabase:', err);
+    }
+    return [];
+  };
 
 
 
@@ -634,46 +616,68 @@ export default function App() {
     }
   }, [isLoginModalOpen]);
 
-  // Place Order handler — saves to Supabase then updates local state
-  const handlePlaceOrder = (orderDetails) => {
-    const userEmail = currentUser?.email || orderDetails.shippingDetails?.userEmail || 'guest@gymmillets.com';
+  // Place Order handler — writes directly to Supabase table 'orders'
+  const handlePlaceOrder = async (orderDetails) => {
+    const finalEmail = (
+      orderDetails.shippingDetails?.email ||
+      orderDetails.shippingDetails?.userEmail ||
+      currentUser?.email ||
+      'guest@gymmillets.com'
+    ).toLowerCase().trim();
+
     const finalOrder = {
       ...orderDetails,
       id: `GM-${Math.floor(1000 + Math.random() * 9000)}`,
       status: 'Placed',
-      userEmail: userEmail,
+      userEmail: finalEmail,
       shippingDetails: {
         ...(orderDetails.shippingDetails || {}),
-        userEmail: userEmail
+        email: finalEmail,
+        userEmail: finalEmail
+      },
+      paymentDetails: {
+        ...(orderDetails.paymentDetails || {}),
+        userEmail: finalEmail
       },
       createdAt: new Date().toISOString()
     };
 
     // If currentUser doesn't have mobile set yet, update it from checkout formData so user account immediately links orders!
-    if (currentUser && orderDetails.shippingDetails?.mobile && !currentUser.mobile) {
+    if (currentUser) {
       const updatedUser = {
         ...currentUser,
-        mobile: orderDetails.shippingDetails.mobile,
-        name: currentUser.name || orderDetails.shippingDetails.name
+        mobile: currentUser.mobile || orderDetails.shippingDetails?.mobile || '',
+        name: currentUser.name || orderDetails.shippingDetails?.name || ''
       };
       setCurrentUser(updatedUser);
       try { localStorage.setItem('currentUser', JSON.stringify(updatedUser)); } catch (e) {}
     }
 
-    // Optimistically update UI first and persist to localStorage
-    setOrders(prev => {
-      const updated = [finalOrder, ...prev.filter(o => o.id !== finalOrder.id)];
-      try { localStorage.setItem('gymmillets_orders', JSON.stringify(updated)); } catch (e) {}
-      return updated;
-    });
+    // Write directly to Supabase FIRST
+    try {
+      await dbSaveOrder(finalOrder);
+      console.log('Order successfully saved to Supabase:', finalOrder.id);
+    } catch (err) {
+      console.error('Failed to save order to Supabase:', err);
+    }
+
+    // Re-fetch all orders directly from Supabase
+    try {
+      const freshOrders = await dbLoadOrders();
+      if (Array.isArray(freshOrders) && freshOrders.length > 0) {
+        setOrders(freshOrders);
+      } else {
+        setOrders(prev => [finalOrder, ...prev.filter(o => o.id !== finalOrder.id)]);
+      }
+    } catch (e) {
+      setOrders(prev => [finalOrder, ...prev.filter(o => o.id !== finalOrder.id)]);
+    }
+
     setActiveOrder(finalOrder);
     setCartItems([]);
     setAppliedCoupon(null);
     setActiveView('order-success');
     addToast('Order Placed successfully!', 'success');
-
-    // Persist to Supabase in background (no UI impact if it fails)
-    dbSaveOrder(finalOrder).catch(() => {});
   };
 
   // Category & Product Filters
@@ -1392,6 +1396,7 @@ export default function App() {
               onDbUpdateOrderShippingDetails={dbUpdateOrderShippingDetails}
               onDbAddCoupon={dbAddCoupon}
               onDbDeleteCoupon={dbDeleteCoupon}
+              onRefreshOrders={refreshOrdersFromDb}
               onAdminLogout={() => {
                 setIsAdminAuthenticated(false);
                 addToast('Logged out of Admin Panel.', 'info');
@@ -1408,6 +1413,7 @@ export default function App() {
             appliedCoupon={appliedCoupon}
             onPlaceOrder={handlePlaceOrder}
             setActiveView={setActiveView}
+            currentUser={currentUser}
           />
         )}
 
@@ -1490,14 +1496,33 @@ export default function App() {
         )}
 
         {/* VIEW 7: USER ACCOUNT & PAST ORDERS */}
-        {activeView === 'account' && currentUser && (
-          <UserAccount
-            currentUser={currentUser}
-            setCurrentUser={setCurrentUser}
-            orders={orders}
-            setActiveView={setActiveView}
-            onAddToast={addToast}
-          />
+        {activeView === 'account' && (
+          currentUser ? (
+            <UserAccount
+              currentUser={currentUser}
+              setCurrentUser={setCurrentUser}
+              orders={orders}
+              setActiveView={setActiveView}
+              onAddToast={addToast}
+              onRefreshOrders={refreshOrdersFromDb}
+            />
+          ) : (
+            <div className="pt-48 sm:pt-52 pb-20 min-h-[70vh] flex flex-col items-center justify-center px-4 text-center">
+              <div className="bg-white dark:bg-darkCard border border-accent/15 dark:border-accent/5 rounded-3xl p-8 max-w-md w-full shadow-premium space-y-4">
+                <span className="text-4xl block">👤</span>
+                <h2 className="text-xl font-outfit font-black text-textDark dark:text-cream">Account Login Required</h2>
+                <p className="text-xs text-textLight dark:text-cream/50">
+                  Please log in with your email to view your past orders, real-time courier tracking, and account details.
+                </p>
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="w-full bg-primary hover:bg-primary-dark text-cream font-bold py-3 rounded-full text-xs shadow-premium transition-all"
+                >
+                  Log In to View Account
+                </button>
+              </div>
+            </div>
+          )
         )}
 
         {/* VIEW 8: STANDALONE ABOUT VIEW */}

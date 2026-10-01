@@ -6,15 +6,17 @@ export default function CheckoutView({
   cartItems,
   appliedCoupon,
   onPlaceOrder,
-  setActiveView
+  setActiveView,
+  currentUser
 }) {
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [isLocating, setIsLocating] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    mobile: '',
+    name: currentUser?.name || '',
+    email: currentUser?.email || '',
+    mobile: currentUser?.mobile || '',
     alternateMobile: '',
     address: '',
     city: '',
@@ -27,6 +29,17 @@ export default function CheckoutView({
     upiId: ''
   });
   const [formErrors, setFormErrors] = useState({});
+
+  React.useEffect(() => {
+    if (currentUser) {
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || currentUser.name || '',
+        email: prev.email || currentUser.email || '',
+        mobile: prev.mobile || currentUser.mobile || ''
+      }));
+    }
+  }, [currentUser]);
 
   const handleLocateMe = () => {
     if (!navigator.geolocation) {
@@ -95,6 +108,7 @@ export default function CheckoutView({
   const validateStep1 = () => {
     const errors = {};
     if (!formData.name.trim()) errors.name = 'Name is required';
+    if (!formData.email.trim() || !formData.email.includes('@')) errors.email = 'Valid email is required for tracking & receipt';
     if (!formData.mobile.trim() || formData.mobile.trim().length < 10) errors.mobile = 'Enter a valid 10-digit mobile number';
     if (formData.alternateMobile.trim() && formData.alternateMobile.trim().length < 10) {
       errors.alternateMobile = 'Enter a valid 10-digit alternate mobile number';
@@ -128,6 +142,7 @@ export default function CheckoutView({
   };
 
   const handlePlaceOrderSubmit = async () => {
+    const finalEmail = (formData.email || currentUser?.email || 'guest@gymmillets.com').toLowerCase().trim();
     const orderDetails = {
       items: cartItems.map(item => ({
         id: item.product.id,
@@ -139,6 +154,8 @@ export default function CheckoutView({
       })),
       shippingDetails: {
         name: formData.name,
+        email: finalEmail,
+        userEmail: finalEmail,
         mobile: formData.mobile,
         alternateMobile: formData.alternateMobile,
         address: formData.address,
@@ -147,8 +164,10 @@ export default function CheckoutView({
         locationUrl: formData.locationUrl
       },
       paymentDetails: {
-        method: formData.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Razorpay Online'
+        method: formData.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Razorpay Online',
+        userEmail: finalEmail
       },
+      userEmail: finalEmail,
       subtotal,
       discount: discountAmount,
       tax: taxAmount,
@@ -298,7 +317,7 @@ export default function CheckoutView({
                   <p className="text-xs text-textLight dark:text-cream/50 mt-1">Please enter your shipping address where we should deliver your fresh millet foods.</p>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">Full Name</label>
                     <input
@@ -310,6 +329,18 @@ export default function CheckoutView({
                       className="bg-cream/50 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-sm font-semibold text-textDark dark:text-cream"
                     />
                     {formErrors.name && <span className="text-[10px] text-highlight font-bold">{formErrors.name}</span>}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">Email Address (Tracking & Bills)</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="e.g. name@example.com"
+                      className="bg-cream/50 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-sm font-semibold text-textDark dark:text-cream"
+                    />
+                    {formErrors.email && <span className="text-[10px] text-highlight font-bold">{formErrors.email}</span>}
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">10-Digit Mobile No</label>
@@ -324,13 +355,13 @@ export default function CheckoutView({
                     {formErrors.mobile && <span className="text-[10px] text-highlight font-bold">{formErrors.mobile}</span>}
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">Alternate Mobile No</label>
+                    <label className="text-xs font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">Alternate Mobile (Optional)</label>
                     <input
                       type="tel"
                       name="alternateMobile"
                       value={formData.alternateMobile}
                       onChange={handleInputChange}
-                      placeholder="e.g. 9876543211 (Optional)"
+                      placeholder="e.g. 9876543211"
                       className="bg-cream/50 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 focus:outline-none focus:border-primary text-sm font-semibold text-textDark dark:text-cream"
                     />
                     {formErrors.alternateMobile && <span className="text-[10px] text-highlight font-bold">{formErrors.alternateMobile}</span>}

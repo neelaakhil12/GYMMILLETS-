@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
 import { User, Calendar, DollarSign, CreditCard, ChevronRight, FileText, Smartphone, Edit2, Check, X, Shield, MapPin, Eye, Truck, Copy, ExternalLink } from 'lucide-react';
 
-export default function UserAccount({ currentUser, setCurrentUser, orders, setActiveView, onAddToast }) {
+export default function UserAccount({ currentUser, setCurrentUser, orders, setActiveView, onAddToast, onRefreshOrders }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lookupPhone, setLookupPhone] = useState('');
   const [copiedId, setCopiedId]   = useState(null);
   const [editForm, setEditForm] = useState({
     name: currentUser?.name || '',
     mobile: currentUser?.mobile || ''
   });
+
+  // Automatically refresh orders from Supabase on mount
+  React.useEffect(() => {
+    if (onRefreshOrders) {
+      onRefreshOrders();
+    }
+  }, []);
 
   // Helper to extract last 10 digits of any phone number (strips country code +91, leading 0, dashes, spaces)
   const cleanPhone = (p) => String(p || '').replace(/\D/g, '').slice(-10);
@@ -356,29 +365,89 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
         {/* Right Side: Order History */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white dark:bg-darkCard border border-accent/15 dark:border-accent/5 rounded-3xl p-6 sm:p-8 shadow-premium space-y-6">
-            <h2 className="text-xl font-outfit font-black text-textDark dark:text-cream flex items-center gap-2">
-              <span>🛍️</span>
-              <span>Past Orders History</span>
-              <span className="text-xs font-semibold px-2.5 py-0.5 bg-cream dark:bg-[#252525] text-textLight dark:text-cream/50 rounded-full">
-                {userOrders.length}
-              </span>
-            </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-accent/10 dark:border-accent/5 pb-4">
+              <h2 className="text-xl font-outfit font-black text-textDark dark:text-cream flex items-center gap-2">
+                <span>🛍️</span>
+                <span>Past Orders History</span>
+                <span className="text-xs font-semibold px-2.5 py-0.5 bg-cream dark:bg-[#252525] text-textLight dark:text-cream/50 rounded-full">
+                  {userOrders.length}
+                </span>
+              </h2>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (onRefreshOrders) {
+                    setIsSyncing(true);
+                    try {
+                      await onRefreshOrders();
+                      onAddToast('Orders synced with database!', 'success');
+                    } catch (e) {
+                      onAddToast('Failed to sync orders.', 'warning');
+                    } finally {
+                      setTimeout(() => setIsSyncing(false), 400);
+                    }
+                  }
+                }}
+                disabled={isSyncing}
+                className="self-start sm:self-auto flex items-center gap-1.5 text-xs font-bold text-primary dark:text-success-light bg-primary/10 hover:bg-primary/20 dark:bg-success/10 px-3.5 py-1.5 rounded-full transition-all"
+              >
+                <span className={isSyncing ? "inline-block animate-spin" : ""}>🔄</span>
+                <span>{isSyncing ? 'Syncing with Supabase...' : 'Refresh from Database'}</span>
+              </button>
+            </div>
 
             {userOrders.length === 0 ? (
-              <div className="text-center py-16 space-y-4">
+              <div className="text-center py-12 space-y-6">
                 <span className="text-4xl block">🥗</span>
                 <div>
-                  <h3 className="text-sm font-bold text-textDark dark:text-cream">No Orders Found</h3>
-                  <p className="text-xs text-textLight dark:text-cream/50 mt-1 max-w-xs mx-auto">
-                    You haven't placed any premium natural millet orders yet. Let's add some items to your kitchen!
+                  <h3 className="text-base font-bold text-textDark dark:text-cream">No Orders Found for this Account</h3>
+                  <p className="text-xs text-textLight dark:text-cream/50 mt-1 max-w-sm mx-auto">
+                    If you placed orders with a phone number or another email, you can link your phone number below to view them directly from the database!
                   </p>
                 </div>
-                <button
-                  onClick={() => setActiveView('shop')}
-                  className="px-6 py-2 bg-primary hover:bg-primary-dark text-cream font-bold text-xs rounded-full transition-all"
-                >
-                  Shop Millet Foods
-                </button>
+
+                <div className="bg-cream/60 dark:bg-[#1e1e1e] border border-accent/20 dark:border-white/10 rounded-2xl p-4 max-w-sm mx-auto text-left space-y-2.5 shadow-sm">
+                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-textLight dark:text-cream/50 block">
+                    Link Mobile Number to View Orders:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="tel"
+                      placeholder="e.g. 9989551305"
+                      value={lookupPhone}
+                      onChange={e => setLookupPhone(e.target.value)}
+                      className="flex-grow bg-white dark:bg-[#252525] border border-accent/25 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-textDark dark:text-cream focus:outline-none focus:border-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const cleaned = cleanPhone(lookupPhone);
+                        if (cleaned.length === 10) {
+                          const updated = { ...currentUser, mobile: lookupPhone.trim() };
+                          setCurrentUser(updated);
+                          localStorage.setItem('currentUser', JSON.stringify(updated));
+                          onAddToast('Mobile linked! Syncing your orders from database...', 'success');
+                          if (onRefreshOrders) onRefreshOrders();
+                        } else {
+                          onAddToast('Please enter a valid 10-digit mobile number.', 'warning');
+                        }
+                      }}
+                      className="bg-primary hover:bg-primary-dark text-cream text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm"
+                    >
+                      Link
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <button
+                    onClick={() => setActiveView('shop')}
+                    className="px-6 py-2.5 bg-primary hover:bg-primary-dark text-cream font-bold text-xs rounded-full transition-all shadow-premium"
+                  >
+                    Shop Millet Foods
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-6 divide-y divide-accent/10 dark:divide-cream/5">

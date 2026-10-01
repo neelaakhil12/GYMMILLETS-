@@ -56,6 +56,7 @@ export default function AdminPanel({
   onDbUpdateOrderStatus,
   onDbUpdateOrderShippingDetails,
   onDbAddCoupon, onDbDeleteCoupon,
+  onRefreshOrders,
   onAdminLogout,
 }) {
   const [tab, setTab] = useState('dashboard');
@@ -88,7 +89,7 @@ export default function AdminPanel({
 
     const updatedShipping = {
       ...selectedViewOrder.shippingDetails,
-      courierName: 'DTDC',
+      courierName: 'Courier Tracking Link',
       courierTrackingUrl: finalUrl,
       trackingId: finalId
     };
@@ -104,7 +105,8 @@ export default function AdminPanel({
     if (onDbUpdateOrderShippingDetails) {
       try {
         await onDbUpdateOrderShippingDetails(selectedViewOrder.id, updatedShipping);
-        onAddToast('Courier tracking details updated successfully!', 'success');
+        onAddToast('Courier tracking details updated successfully in database!', 'success');
+        if (onRefreshOrders) onRefreshOrders();
       } catch (err) {
         onAddToast('Failed to update tracking details in database.', 'warning');
       }
@@ -899,13 +901,20 @@ export default function AdminPanel({
   };
 
   // ── Order Handlers ─────────────────────────────────────────────────────────
-  const handleUpdateStatus = (orderId, status) => {
+  const handleUpdateStatus = async (orderId, status) => {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
     if (activeOrder?.id === orderId && setActiveOrder) {
       setActiveOrder(prev => ({ ...prev, status }));
     }
     onAddToast(`Order ${orderId} → ${status}`, 'success');
-    if (onDbUpdateOrderStatus) onDbUpdateOrderStatus(orderId, status).catch(() => {});
+    if (onDbUpdateOrderStatus) {
+      try {
+        await onDbUpdateOrderStatus(orderId, status);
+        if (onRefreshOrders) onRefreshOrders();
+      } catch (err) {
+        console.error('Failed to update status in Supabase:', err);
+      }
+    }
   };
 
   const handleOrderStatusSelectChange = (order, newStatus) => {
@@ -951,10 +960,11 @@ export default function AdminPanel({
     onAddToast(`Order ${order.id} marked Out for Delivery with courier tracking!`, 'success');
     setOutForDeliveryModal(null);
 
-    // Persist to Supabase
+    // Persist directly to Supabase
     try {
       if (onDbUpdateOrderStatus) await onDbUpdateOrderStatus(order.id, 'Out for Delivery');
       if (onDbUpdateOrderShippingDetails) await onDbUpdateOrderShippingDetails(order.id, updatedShipping);
+      if (onRefreshOrders) onRefreshOrders();
     } catch (err) {
       console.error('Failed to update order tracking to Supabase:', err);
     }

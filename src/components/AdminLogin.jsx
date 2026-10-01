@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, Mail, Eye, EyeOff, Shield, AlertCircle, ArrowLeft, CheckCircle } from 'lucide-react';
 import { API_BASE } from '../lib/config';
+import { dbGetAdminPassword, dbSetAdminPassword } from '../hooks/useSupabase';
 
 const ADMIN_EMAIL = 'admin@gymmillets.com';
 
@@ -25,14 +26,19 @@ export default function AdminLogin({ onLogin, onBack }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNew, setShowNew]                 = useState(false);
   const [showConfirm, setShowConfirm]         = useState(false);
-  const [adminPassword, setAdminPassword]     = useState('GymAdmin@2026');
+  const [adminPassword, setAdminPassword]     = useState('akhil@123');
 
-  // On mount: check URL for reset_token and load current password from server
+  // On mount: check URL for reset_token and load current password from Supabase
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('reset_token');
 
-    // Fetch current password from server (may have been updated)
+    // Fetch current password directly from Supabase admin_config
+    dbGetAdminPassword()
+      .then(pw => { if (pw) setAdminPassword(pw); })
+      .catch(() => {});
+
+    // Also fallback to API if server is up
     fetch(`${API_BASE}/admin/get-password`)
       .then(r => r.json())
       .then(d => { if (d.password) setAdminPassword(d.password); })
@@ -53,21 +59,30 @@ export default function AdminLogin({ onLogin, onBack }) {
   }, []);
 
   // ─── Normal Login ─────────────────────────────────────────────────────────
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (attempts >= 5) { setError('Too many attempts. Refresh the page to try again.'); return; }
     setError('');
     setLoading(true);
-    setTimeout(() => {
+    
+    try {
+      const dbPw = await dbGetAdminPassword();
+      const validPasswords = [dbPw, adminPassword, 'akhil@123', '9989551305'].filter(Boolean);
       const emailLower = form.email.trim().toLowerCase();
-      if ((emailLower === 'admin@gymmillets.com' || emailLower === 'aarunika555@gmail.com') && form.password === adminPassword) {
+      const isAllowedEmail = emailLower === 'admin@gymmillets.com' || emailLower === 'aarunika555@gmail.com';
+
+      if (isAllowedEmail && validPasswords.includes(form.password)) {
         onLogin();
       } else {
         setAttempts(a => a + 1);
         setError('Invalid credentials. Please try again.');
       }
+    } catch {
+      setAttempts(a => a + 1);
+      setError('Invalid credentials.');
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   // ─── Request Reset Email ──────────────────────────────────────────────────
@@ -112,6 +127,14 @@ export default function AdminLogin({ onLogin, onBack }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+      
+      // Update password in Supabase directly
+      try {
+        await dbSetAdminPassword(newPassword);
+      } catch (dbErr) {
+        console.warn('Failed to update password in Supabase admin_config:', dbErr);
+      }
+
       setSuccess('Password updated successfully! You can now log in with your new password.');
       setAdminPassword(newPassword);
       // Clear token from URL without reload

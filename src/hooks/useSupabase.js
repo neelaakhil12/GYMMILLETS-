@@ -11,7 +11,7 @@ export async function dbLoadProducts() {
     .order('created_at', { ascending: true });
   if (error) throw error;
   // Map DB row → app shape
-  return data.map(rowToProduct);
+  return (data || []).map(rowToProduct);
 }
 
 export async function dbAddProduct(product) {
@@ -40,6 +40,23 @@ export async function dbDeleteProduct(id) {
   if (error) throw error;
 }
 
+export function subscribeToProducts(callback) {
+  const channel = supabase
+    .channel('realtime:products')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'products' },
+      payload => {
+        if (callback) callback(payload);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
 // ─────────────────────────────────────────────
 //  ORDERS
 // ─────────────────────────────────────────────
@@ -50,13 +67,14 @@ export async function dbLoadOrders() {
     .select('*')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data.map(rowToOrder);
+  return (data || []).map(rowToOrder);
 }
 
 export async function dbSaveOrder(order) {
+  const row = orderToRow(order);
   const { data, error } = await supabase
     .from('orders')
-    .insert([orderToRow(order)])
+    .insert([row])
     .select()
     .single();
   if (error) throw error;
@@ -79,6 +97,23 @@ export async function dbUpdateOrderShippingDetails(id, shippingDetails) {
   if (error) throw error;
 }
 
+export function subscribeToOrders(callback) {
+  const channel = supabase
+    .channel('realtime:orders')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'orders' },
+      payload => {
+        if (callback) callback(payload);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
 // ─────────────────────────────────────────────
 //  COUPONS
 // ─────────────────────────────────────────────
@@ -89,7 +124,7 @@ export async function dbLoadCoupons() {
     .select('*')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data.map(rowToCoupon);
+  return (data || []).map(rowToCoupon);
 }
 
 export async function dbAddCoupon(coupon) {
@@ -104,6 +139,27 @@ export async function dbAddCoupon(coupon) {
 
 export async function dbDeleteCoupon(code) {
   const { error } = await supabase.from('coupons').delete().eq('code', code);
+  if (error) throw error;
+}
+
+// ─────────────────────────────────────────────
+//  ADMIN CONFIG
+// ─────────────────────────────────────────────
+
+export async function dbGetAdminPassword() {
+  const { data, error } = await supabase
+    .from('admin_config')
+    .select('value')
+    .eq('key', 'password')
+    .single();
+  if (error) return null;
+  return data?.value || null;
+}
+
+export async function dbSetAdminPassword(newPassword) {
+  const { error } = await supabase
+    .from('admin_config')
+    .upsert({ key: 'password', value: newPassword });
   if (error) throw error;
 }
 
@@ -145,31 +201,55 @@ function productToRow(p) {
   };
 }
 
-function rowToOrder(row) {
+export function rowToOrder(row) {
   const shipping = row.shipping_details || {};
   const payment = row.payment_details || {};
+  const userEmail = (
+    shipping.userEmail ||
+    shipping.email ||
+    payment.userEmail ||
+    row.user_email ||
+    ''
+  ).toLowerCase().trim();
+
   return {
     id: row.id,
     items: row.items || [],
-    shippingDetails: shipping,
-    paymentDetails: payment,
+    shippingDetails: {
+      ...shipping,
+      userEmail: userEmail,
+      email: shipping.email || userEmail
+    },
+    paymentDetails: {
+      ...payment,
+      userEmail: userEmail
+    },
     subtotal: row.subtotal || 0,
     discount: row.discount || 0,
     tax: row.tax || 0,
     shipping: row.shipping || 0,
     total: row.total || 0,
     status: row.status || 'Placed',
-    userEmail: shipping.userEmail || payment.userEmail || row.user_email || '',
+    userEmail: userEmail,
     createdAt: row.created_at
   };
 }
 
-function orderToRow(o) {
-  const userEmail = o.userEmail || o.shippingDetails?.userEmail || '';
+export function orderToRow(o) {
+  const userEmail = (
+    o.userEmail ||
+    o.shippingDetails?.userEmail ||
+    o.shippingDetails?.email ||
+    o.paymentDetails?.userEmail ||
+    ''
+  ).toLowerCase().trim();
+
   const shippingWithUser = {
     ...(o.shippingDetails || {}),
-    userEmail: userEmail
+    userEmail: userEmail,
+    email: o.shippingDetails?.email || userEmail
   };
+
   return {
     id: o.id,
     items: o.items || [],
