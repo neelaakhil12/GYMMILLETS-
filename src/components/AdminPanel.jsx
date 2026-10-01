@@ -104,7 +104,7 @@ export default function AdminPanel({
     if (onDbUpdateOrderShippingDetails) {
       try {
         await onDbUpdateOrderShippingDetails(selectedViewOrder.id, updatedShipping);
-        onAddToast('DTDC courier details updated successfully!', 'success');
+        onAddToast('Courier tracking details updated successfully!', 'success');
       } catch (err) {
         onAddToast('Failed to update tracking details in database.', 'warning');
       }
@@ -949,7 +949,7 @@ export default function AdminPanel({
       setSelectedViewOrder(updatedOrder);
     }
 
-    onAddToast(`Order ${order.id} marked Out for Delivery with DTDC tracking!`, 'success');
+    onAddToast(`Order ${order.id} marked Out for Delivery with courier tracking!`, 'success');
     setOutForDeliveryModal(null);
 
     // Persist to Supabase
@@ -1480,11 +1480,11 @@ export default function AdminPanel({
                                     dtdcTrackingUrl: o.shippingDetails?.courierTrackingUrl || 'https://www.dtdc.in/',
                                     trackingId: o.shippingDetails?.trackingId || '',
                                   })}
-                                  title="Click to edit DTDC tracking details"
+                                  title="Click to edit courier tracking details"
                                   className="text-[10px] font-mono font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
                                 >
                                   <Truck size={10} />
-                                  <span>DTDC: {o.shippingDetails.trackingId}</span>
+                                  <span>Tracking: {o.shippingDetails.trackingId}</span>
                                 </button>
                               </div>
                             )}
@@ -2007,15 +2007,15 @@ export default function AdminPanel({
                 <div className="mt-3 pt-3 border-t border-accent/10 space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="block text-[10px] font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">
-                      DTDC Courier Logistics Details
+                      Courier Tracking Details
                     </label>
                     <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">
-                      DTDC Express
+                      Courier Partner
                     </span>
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-textLight dark:text-cream/60">DTDC Tracking ID / AWB Number:</span>
+                    <span className="text-[10px] font-bold text-textLight dark:text-cream/60">Tracking ID / AWB Number:</span>
                     <input
                       type="text"
                       placeholder="e.g. D12345678, B98765432"
@@ -2026,11 +2026,11 @@ export default function AdminPanel({
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-textLight dark:text-cream/60">DTDC Courier Tracking Link:</span>
+                    <span className="text-[10px] font-bold text-textLight dark:text-cream/60">Courier Tracking Link:</span>
                     <div className="flex gap-2">
                       <input
                         type="url"
-                        placeholder="https://www.dtdc.in/"
+                        placeholder="https://www.dtdc.in/ or courier tracking link"
                         value={trackingInput}
                         onChange={e => setTrackingInput(e.target.value)}
                         className="flex-grow bg-white dark:bg-[#252525] border border-accent/25 rounded-xl px-3 py-2 text-xs font-semibold text-textDark dark:text-cream focus:outline-none focus:border-purple-500"
@@ -2040,7 +2040,7 @@ export default function AdminPanel({
                         className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-cream font-bold text-xs rounded-xl active:scale-95 transition-all shadow-premium shrink-0 flex items-center gap-1"
                       >
                         <Check size={12} />
-                        <span>Save DTDC</span>
+                        <span>Save Tracking</span>
                       </button>
                     </div>
                   </div>
@@ -2136,7 +2136,7 @@ export default function AdminPanel({
                     </span>
                   </div>
                   <h3 className="text-lg font-outfit font-black text-textDark dark:text-cream mt-0.5">
-                    DTDC Courier Details
+                    Courier Tracking Details
                   </h3>
                 </div>
               </div>
@@ -2166,16 +2166,16 @@ export default function AdminPanel({
             </div>
 
             <form onSubmit={handleConfirmOutForDelivery} className="space-y-4">
-              {/* Field 1: DTDC Courier Tracking ID */}
+              {/* Field 1: Courier Tracking ID */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-extrabold text-textDark dark:text-cream uppercase tracking-wider">
-                  DTDC Tracking ID / AWB Number <span className="text-primary">*</span>
+                  Tracking ID / AWB Number <span className="text-primary">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   autoFocus
-                  placeholder="e.g. D39847120, B9823412, etc."
+                  placeholder="e.g. 123456, D39847120, B9823412"
                   value={outForDeliveryModal.trackingId}
                   onChange={e => setOutForDeliveryModal(prev => ({ ...prev, trackingId: e.target.value }))}
                   className="w-full bg-cream/40 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 text-sm font-mono font-bold text-textDark dark:text-cream focus:outline-none focus:border-purple-500 transition-colors"
@@ -2185,11 +2185,11 @@ export default function AdminPanel({
                 </p>
               </div>
 
-              {/* Field 2: DTDC Courier Tracking Link */}
+              {/* Field 2: Courier Tracking Link */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-extrabold text-textDark dark:text-cream uppercase tracking-wider">
-                    DTDC Courier Tracking Link <span className="text-primary">*</span>
+                    Courier Tracking Link <span className="text-primary">*</span>
                   </label>
                   <div className="flex gap-1.5">
                     <button
@@ -2212,7 +2212,7 @@ export default function AdminPanel({
                 <input
                   type="url"
                   required
-                  placeholder="https://www.dtdc.in/"
+                  placeholder="https://www.dtdc.in/ or courier tracking link"
                   value={outForDeliveryModal.dtdcTrackingUrl}
                   onChange={e => setOutForDeliveryModal(prev => ({ ...prev, dtdcTrackingUrl: e.target.value }))}
                   className="w-full bg-cream/40 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 text-xs font-medium text-textDark dark:text-cream focus:outline-none focus:border-purple-500 transition-colors"
@@ -2231,7 +2231,7 @@ export default function AdminPanel({
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-textLight dark:text-cream/60 uppercase">AWB:</span>
                     <code className="text-xs font-mono font-black text-textDark dark:text-cream">
-                      {outForDeliveryModal.trackingId || 'DXXXXXXX'}
+                      {outForDeliveryModal.trackingId || '123456'}
                     </code>
                   </div>
                   <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-purple-600 to-primary text-white rounded-lg text-[10px] font-bold">
@@ -2240,7 +2240,7 @@ export default function AdminPanel({
                   </div>
                 </div>
                 <p className="text-[10px] text-textLight dark:text-cream/50 italic">
-                  When customer clicks "Track Your Order", the Tracking ID is automatically copied to clipboard and DTDC portal opens in a new tab.
+                  When customer clicks "Track Your Order", the Tracking ID is automatically copied to clipboard and courier tracking link opens in a new tab.
                 </p>
               </div>
 

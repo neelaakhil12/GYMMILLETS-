@@ -92,9 +92,9 @@ export default function OrderTrackingView({ activeOrder, setActiveView, onAddToa
       }
       setCopiedId(trackingId);
       setTimeout(() => setCopiedId(null), 3500);
-      if (onAddToast) onAddToast(`Tracking ID "${trackingId}" copied! Opening DTDC courier portal...`, 'success');
+      if (onAddToast) onAddToast(`Tracking ID "${trackingId}" copied! Opening courier tracking link...`, 'success');
     } else {
-      if (onAddToast) onAddToast('Opening DTDC courier tracking portal...', 'info');
+      if (onAddToast) onAddToast('Opening courier tracking link...', 'info');
     }
 
     window.open(courierUrl, '_blank', 'noopener,noreferrer');
@@ -207,7 +207,7 @@ export default function OrderTrackingView({ activeOrder, setActiveView, onAddToa
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-extrabold uppercase tracking-widest bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2.5 py-0.5 rounded-full">
-                      DTDC Express Logistics
+                      Courier Delivery
                     </span>
                     {activeOrder.status === 'Out for Delivery' && (
                       <span className="text-[10px] font-bold text-success animate-pulse flex items-center gap-1">
@@ -229,7 +229,7 @@ export default function OrderTrackingView({ activeOrder, setActiveView, onAddToa
                 <div className="flex items-center gap-2 bg-white dark:bg-[#202020] border border-purple-500/25 px-3.5 py-2 rounded-2xl shadow-sm self-start sm:self-auto">
                   <div>
                     <span className="text-[9px] font-extrabold uppercase text-textLight dark:text-cream/50 tracking-wider block">
-                      DTDC Tracking ID
+                      Courier Tracking ID
                     </span>
                     <code className="text-sm font-mono font-black text-purple-700 dark:text-purple-300 select-all">
                       {activeOrder.shippingDetails.trackingId}
@@ -257,7 +257,7 @@ export default function OrderTrackingView({ activeOrder, setActiveView, onAddToa
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-purple-500/15">
               <p className="text-xs text-textLight dark:text-cream/60">
-                Click <strong className="text-textDark dark:text-cream font-bold">"Track Your Order"</strong> to copy the tracking ID and jump directly to the DTDC tracking portal.
+                Click <strong className="text-textDark dark:text-cream font-bold">"Track Your Order"</strong> to copy the tracking ID and jump directly to the courier tracking link.
               </p>
 
               <button
