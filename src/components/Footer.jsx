@@ -86,6 +86,16 @@ export default function Footer({ setActiveView, setSelectedCategory, onAddToast 
                 Contact
               </button>
             </li>
+            <li>
+              <button onClick={() => handleViewLink('terms')} className="hover:text-cream transition-colors text-left hover:translate-x-1 transform duration-200">
+                Terms & Conditions
+              </button>
+            </li>
+            <li>
+              <button onClick={() => handleViewLink('privacy')} className="hover:text-cream transition-colors text-left hover:translate-x-1 transform duration-200">
+                Privacy Policy
+              </button>
+            </li>
           </ul>
         </div>
 
@@ -172,9 +182,20 @@ export default function Footer({ setActiveView, setSelectedCategory, onAddToast 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 text-center">
         <div className="text-xs text-cream/40 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>© 2026 GymMillets. All rights reserved. 🌾 Designed for clean natural health.</p>
-          <div className="flex gap-4">
-            <a href="#privacy" className="hover:text-cream transition-colors">Privacy Policy</a>
-            <a href="#terms" className="hover:text-cream transition-colors">Terms of Service</a>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => handleViewLink('privacy')}
+              className="hover:text-cream transition-colors cursor-pointer"
+            >
+              Privacy Policy
+            </button>
+            <span className="text-cream/20">•</span>
+            <button
+              onClick={() => handleViewLink('terms')}
+              className="hover:text-cream transition-colors cursor-pointer"
+            >
+              Terms of Service
+            </button>
           </div>
         </div>
       </div>

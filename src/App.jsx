@@ -25,6 +25,7 @@ import Testimonials from './components/Testimonials';
 import WhyChooseUs from './components/WhyChooseUs';
 import Splash from './components/Splash';
 import UserAccount from './components/UserAccount';
+import LegalPoliciesView from './components/LegalPoliciesView';
 import Footer from './components/Footer';
 import Toast from './components/Toast';
 import AnimatedCounter from './components/AnimatedCounter';
@@ -118,6 +119,8 @@ export default function App() {
     if (path === '/cart') return 'cart';
     if (path === '/about') return 'about';
     if (path === '/contact') return 'contact';
+    if (path === '/terms' || path === '/terms-and-conditions') return 'terms';
+    if (path === '/privacy' || path === '/privacy-policy') return 'privacy';
     return 'home';
   });
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -447,6 +450,8 @@ export default function App() {
     else if (activeView === 'about') expected = '/about';
     else if (activeView === 'contact') expected = '/contact';
     else if (activeView === 'account') expected = '/account';
+    else if (activeView === 'terms') expected = '/terms';
+    else if (activeView === 'privacy') expected = '/privacy';
 
     if (path !== expected) {
       const search = window.location.search;
@@ -465,6 +470,8 @@ export default function App() {
       else if (path === '/about') setActiveView('about');
       else if (path === '/contact') setActiveView('contact');
       else if (path === '/account') setActiveView('account');
+      else if (path === '/terms' || path === '/terms-and-conditions') setActiveView('terms');
+      else if (path === '/privacy' || path === '/privacy-policy') setActiveView('privacy');
       else setActiveView('home');
     };
     window.addEventListener('popstate', handlePopState);
@@ -1838,6 +1845,14 @@ export default function App() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* VIEW 10: TERMS & CONDITIONS OR PRIVACY POLICY */}
+        {(activeView === 'terms' || activeView === 'privacy') && (
+          <LegalPoliciesView
+            activeView={activeView}
+            setActiveView={setActiveView}
+          />
         )}
 
       </main>

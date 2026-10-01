@@ -11,7 +11,9 @@ const staticPages = [
   { loc: `${DOMAIN}/`, priority: '1.0', changefreq: 'daily' },
   { loc: `${DOMAIN}/shop`, priority: '0.9', changefreq: 'daily' },
   { loc: `${DOMAIN}/about`, priority: '0.8', changefreq: 'weekly' },
-  { loc: `${DOMAIN}/contact`, priority: '0.8', changefreq: 'weekly' }
+  { loc: `${DOMAIN}/contact`, priority: '0.8', changefreq: 'weekly' },
+  { loc: `${DOMAIN}/terms`, priority: '0.5', changefreq: 'monthly' },
+  { loc: `${DOMAIN}/privacy`, priority: '0.5', changefreq: 'monthly' }
 ];
 
 const categoryPages = PRODUCT_CATEGORIES.map(category => ({
