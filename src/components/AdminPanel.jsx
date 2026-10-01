@@ -76,14 +76,14 @@ export default function AdminPanel({
 
   useEffect(() => {
     if (selectedViewOrder) {
-      setTrackingInput(selectedViewOrder.shippingDetails?.courierTrackingUrl || 'https://www.dtdc.in/');
+      setTrackingInput(selectedViewOrder.shippingDetails?.courierTrackingUrl || '');
       setTrackingIdInput(selectedViewOrder.shippingDetails?.trackingId || '');
     }
   }, [selectedViewOrder]);
 
   const handleSaveTracking = async () => {
     if (!selectedViewOrder) return;
-    const finalUrl = (trackingInput || 'https://www.dtdc.in/').trim();
+    const finalUrl = (trackingInput || '').trim();
     const finalId = (trackingIdInput || '').trim();
 
     const updatedShipping = {
@@ -912,7 +912,7 @@ export default function AdminPanel({
     if (newStatus === 'Out for Delivery') {
       setOutForDeliveryModal({
         order,
-        dtdcTrackingUrl: order.shippingDetails?.courierTrackingUrl || 'https://www.dtdc.in/',
+        courierTrackingUrl: order.shippingDetails?.courierTrackingUrl || '',
         trackingId: order.shippingDetails?.trackingId || '',
       });
     } else {
@@ -923,14 +923,13 @@ export default function AdminPanel({
   const handleConfirmOutForDelivery = async (e) => {
     if (e) e.preventDefault();
     if (!outForDeliveryModal) return;
-    const { order, dtdcTrackingUrl, trackingId } = outForDeliveryModal;
+    const { order, courierTrackingUrl, trackingId } = outForDeliveryModal;
 
-    const finalTrackingUrl = (dtdcTrackingUrl || 'https://www.dtdc.in/').trim();
+    const finalTrackingUrl = (courierTrackingUrl || '').trim();
     const finalTrackingId = (trackingId || '').trim();
 
     const updatedShipping = {
       ...order.shippingDetails,
-      courierName: 'DTDC',
       courierTrackingUrl: finalTrackingUrl,
       trackingId: finalTrackingId,
     };
@@ -1477,7 +1476,7 @@ export default function AdminPanel({
                                   type="button"
                                   onClick={() => setOutForDeliveryModal({
                                     order: o,
-                                    dtdcTrackingUrl: o.shippingDetails?.courierTrackingUrl || 'https://www.dtdc.in/',
+                                    courierTrackingUrl: o.shippingDetails?.courierTrackingUrl || '',
                                     trackingId: o.shippingDetails?.trackingId || '',
                                   })}
                                   title="Click to edit courier tracking details"
@@ -2030,7 +2029,7 @@ export default function AdminPanel({
                     <div className="flex gap-2">
                       <input
                         type="url"
-                        placeholder="https://www.dtdc.in/ or courier tracking link"
+                        placeholder="e.g. https://..."
                         value={trackingInput}
                         onChange={e => setTrackingInput(e.target.value)}
                         className="flex-grow bg-white dark:bg-[#252525] border border-accent/25 rounded-xl px-3 py-2 text-xs font-semibold text-textDark dark:text-cream focus:outline-none focus:border-purple-500"
@@ -2187,34 +2186,15 @@ export default function AdminPanel({
 
               {/* Field 2: Courier Tracking Link */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-extrabold text-textDark dark:text-cream uppercase tracking-wider">
-                    Courier Tracking Link <span className="text-primary">*</span>
-                  </label>
-                  <div className="flex gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setOutForDeliveryModal(prev => ({ ...prev, dtdcTrackingUrl: 'https://www.dtdc.in/' }))}
-                      className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline"
-                    >
-                      dtdc.in
-                    </button>
-                    <span className="text-[10px] text-accent/30">•</span>
-                    <button
-                      type="button"
-                      onClick={() => setOutForDeliveryModal(prev => ({ ...prev, dtdcTrackingUrl: 'https://track.dtdc.com/' }))}
-                      className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline"
-                    >
-                      track.dtdc.com
-                    </button>
-                  </div>
-                </div>
+                <label className="block text-xs font-extrabold text-textDark dark:text-cream uppercase tracking-wider">
+                  Courier Tracking Link <span className="text-primary">*</span>
+                </label>
                 <input
                   type="url"
                   required
-                  placeholder="https://www.dtdc.in/ or courier tracking link"
-                  value={outForDeliveryModal.dtdcTrackingUrl}
-                  onChange={e => setOutForDeliveryModal(prev => ({ ...prev, dtdcTrackingUrl: e.target.value }))}
+                  placeholder="e.g. https://..."
+                  value={outForDeliveryModal.courierTrackingUrl}
+                  onChange={e => setOutForDeliveryModal(prev => ({ ...prev, courierTrackingUrl: e.target.value }))}
                   className="w-full bg-cream/40 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 text-xs font-medium text-textDark dark:text-cream focus:outline-none focus:border-purple-500 transition-colors"
                 />
                 <p className="text-[11px] text-textLight dark:text-cream/50">
@@ -2230,17 +2210,29 @@ export default function AdminPanel({
                 <div className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-[#202020] p-2.5 rounded-xl border border-accent/10">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold text-textLight dark:text-cream/60 uppercase">AWB:</span>
-                    <code className="text-xs font-mono font-black text-textDark dark:text-cream">
-                      {outForDeliveryModal.trackingId || '123456'}
-                    </code>
+                    {outForDeliveryModal.trackingId ? (
+                      <code className="text-xs font-mono font-black text-textDark dark:text-cream">
+                        {outForDeliveryModal.trackingId}
+                      </code>
+                    ) : (
+                      <span className="text-xs text-textLight/40 dark:text-cream/30 italic">
+                        Not entered yet
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-purple-600 to-primary text-white rounded-lg text-[10px] font-bold">
+                  <div className={`flex items-center gap-1.5 px-3 py-1 text-white rounded-lg text-[10px] font-bold transition-all ${
+                    outForDeliveryModal.courierTrackingUrl ? 'bg-gradient-to-r from-purple-600 to-primary' : 'bg-gray-400/60 dark:bg-white/10 text-cream/70'
+                  }`}>
                     <Truck size={11} />
                     <span>Track Your Order</span>
                   </div>
                 </div>
                 <p className="text-[10px] text-textLight dark:text-cream/50 italic">
-                  When customer clicks "Track Your Order", the Tracking ID is automatically copied to clipboard and courier tracking link opens in a new tab.
+                  {outForDeliveryModal.trackingId && outForDeliveryModal.courierTrackingUrl ? (
+                    'When customer clicks "Track Your Order", the Tracking ID is automatically copied to clipboard and courier tracking link opens in a new tab.'
+                  ) : (
+                    'Enter the tracking ID and courier tracking link above to see how they will appear to the customer.'
+                  )}
                 </p>
               </div>
 
