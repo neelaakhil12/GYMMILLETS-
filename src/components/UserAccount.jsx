@@ -6,6 +6,7 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
   const [isSyncing, setIsSyncing] = useState(false);
   const [lookupPhone, setLookupPhone] = useState('');
   const [copiedId, setCopiedId]   = useState(null);
+  const [logoBase64, setLogoBase64] = useState('');
   const [editForm, setEditForm] = useState({
     name: currentUser?.name || '',
     mobile: currentUser?.mobile || ''
@@ -16,6 +17,23 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
     if (onRefreshOrders) {
       onRefreshOrders();
     }
+  }, []);
+
+  // Pre-load official website logo to Base64 so it renders with 100% fidelity in offline & printed invoice popups
+  React.useEffect(() => {
+    fetch('/logo.png')
+      .then(res => {
+        if (!res.ok) throw new Error('Network issue');
+        return res.blob();
+      })
+      .then(blob => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (reader.result) setLogoBase64(reader.result);
+        };
+        reader.readAsDataURL(blob);
+      })
+      .catch(() => {});
   }, []);
 
   // Helper to extract last 10 digits of any phone number (strips country code +91, leading 0, dashes, spaces)
@@ -117,6 +135,7 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
     const isLocal = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
     const websiteUrl = isLocal ? 'https://www.tenigymillets.com' : currentOrigin;
     const websiteDisplay = isLocal ? 'www.tenigymillets.com' : (window.location.host || 'www.tenigymillets.com');
+    const logoSrc = logoBase64 || `${currentOrigin}/logo.png`;
 
     const formattedDate = order.createdAt
       ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -145,19 +164,22 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
       <html>
         <head>
           <title>Invoice - ${order.id}</title>
+          <link rel="icon" type="image/png" href="${logoSrc}">
           <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
           <style>
             body { font-family: 'Poppins', sans-serif; padding: 40px; color: #2d3748; background: #fff; line-height: 1.5; }
             .invoice-card { max-width: 800px; margin: auto; padding: 40px; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
             .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #edf2f7; padding-bottom: 24px; }
-            .logo { font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #4b6b40; display: flex; align-items: center; gap: 8px; }
+            .brand-box { display: flex; align-items: center; gap: 14px; }
+            .brand-logo { height: 68px; width: 68px; object-fit: contain; border-radius: 50%; border: 2px solid #edf2f7; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+            .brand-name { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 800; color: #4b6b40; line-height: 1.1; }
             .details { display: flex; justify-content: space-between; margin-top: 30px; margin-bottom: 30px; font-size: 14px; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
             th { background: #f7fafc; padding: 12px 10px; font-weight: bold; text-align: left; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #edf2f7; color: #718096; }
             .summary { width: 280px; margin-left: auto; margin-top: 30px; font-size: 14px; border-top: 2px solid #edf2f7; padding-top: 15px; }
             .summary-row { display: flex; justify-content: space-between; padding: 6px 0; }
             .total { font-weight: 800; border-top: 2px dashed #edf2f7; padding-top: 12px; color: #4b6b40; font-size: 18px; margin-top: 6px; }
-            .footer { text-align: center; margin-top: 60px; font-size: 12px; color: #a0aec0; border-top: 1px solid #edf2f7; padding-top: 24px; }
+            .footer { text-align: center; margin-top: 50px; font-size: 12px; color: #a0aec0; border-top: 1px solid #edf2f7; padding-top: 24px; }
             @media print {
               body { padding: 0; background: none; }
               .invoice-card { border: none; box-shadow: none; padding: 0; }
@@ -167,16 +189,19 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
         <body>
           <div class="invoice-card">
             <div class="header">
-              <div>
-                <div class="logo">🌾 GymMillets</div>
-                <p style="font-size: 12px; color: #718096; margin: 4px 0 0 0;">100% Premium Natural Millet Foods & Premixes</p>
-                <p style="font-size: 12px; color: #4b6b40; font-weight: 700; margin: 5px 0 0 0;">
-                  🌐 <a href="${websiteUrl}" target="_blank" style="color: #4b6b40; text-decoration: none;">${websiteDisplay}</a>
-                </p>
+              <div class="brand-box">
+                <img src="${logoSrc}" alt="GymMillets Logo" class="brand-logo" />
+                <div>
+                  <div class="brand-name">GymMillets</div>
+                  <p style="font-size: 12px; color: #718096; margin: 3px 0 0 0; font-weight: 500;">100% Premium Natural Millet Foods & Premixes</p>
+                  <p style="font-size: 12px; color: #4b6b40; font-weight: 700; margin: 4px 0 0 0;">
+                    🌐 <a href="${websiteUrl}" target="_blank" style="color: #4b6b40; text-decoration: none;">${websiteDisplay}</a>
+                  </p>
+                </div>
               </div>
               <div style="text-align: right;">
-                <h2 style="margin: 0; color: #4b6b40; font-family: 'Outfit', sans-serif; font-weight: 800;">INVOICE</h2>
-                <p style="font-size: 13px; font-weight: 600; color: #4b6b40; margin: 4px 0 0 0;">ID: ${order.id}</p>
+                <h2 style="margin: 0; color: #4b6b40; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 26px;">INVOICE</h2>
+                <p style="font-size: 13px; font-weight: 700; color: #2d3748; margin: 4px 0 0 0;">ID: ${order.id}</p>
                 <p style="font-size: 11px; color: #718096; margin: 3px 0 0 0;">Official Web Order: ${websiteDisplay}</p>
               </div>
             </div>
@@ -191,7 +216,7 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
               <div style="text-align: right;">
                 <h4 style="margin: 0 0 8px 0; color: #a0aec0; text-transform: uppercase; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;">Invoice Details:</h4>
                 <p style="margin: 0;">Date: ${formattedDate}</p>
-                <p style="margin: 4px 0 0 0;">Payment Method: ${order.paymentDetails?.method || 'UPI/Card'}</p>
+                <p style="margin: 4px 0 0 0;">Payment Method: ${order.paymentDetails?.method || 'Cash on Delivery'}</p>
                 <p style="margin: 4px 0 0 0;">Website: <strong style="color: #4b6b40;">${websiteDisplay}</strong></p>
                 <p style="margin: 6px 0 0 0; font-weight: bold; color: #4b6b40; font-size: 14px;">Status: Paid</p>
               </div>
@@ -225,7 +250,7 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
               </div>
               <div class="summary-row">
                 <span>Delivery Fee</span>
-                <span>₹${shippingFee === 0 ? 'FREE' : `₹${shippingFee}`}</span>
+                <span>${shippingFee === 0 ? 'FREE' : `₹${shippingFee}`}</span>
               </div>
               <div class="summary-row total">
                 <span>Grand Total</span>
@@ -233,8 +258,12 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
               </div>
             </div>
             <div class="footer">
-              <p style="font-weight: 700; color: #4b6b40; font-size: 13px;">Thank you for choosing GymMillets!</p>
-              <p style="font-size: 12px; color: #4a5568; margin: 6px 0;">🌐 Website: <a href="${websiteUrl}" target="_blank" style="color: #4b6b40; font-weight: bold; text-decoration: underline;">${websiteDisplay}</a> • Email: support@gymmillets.com</p>
+              <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px;">
+                <img src="${logoSrc}" alt="GymMillets" style="height: 26px; width: 26px; object-fit: contain; border-radius: 50%;" />
+                <span style="font-weight: 800; color: #4b6b40; font-family: 'Outfit', sans-serif; font-size: 15px;">GymMillets</span>
+              </div>
+              <p style="font-weight: 700; color: #4b6b40; font-size: 13px; margin: 0 0 4px 0;">Thank you for choosing GymMillets!</p>
+              <p style="font-size: 12px; color: #4a5568; margin: 4px 0;">🌐 Website: <a href="${websiteUrl}" target="_blank" style="color: #4b6b40; font-weight: bold; text-decoration: underline;">${websiteDisplay}</a> • Email: support@gymmillets.com</p>
               <p style="font-size: 10px; margin-top: 6px; color: #a0aec0;">This is an authentic computer-generated invoice from ${websiteDisplay}. No physical signature is required.</p>
             </div>
           </div>
