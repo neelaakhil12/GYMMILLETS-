@@ -142,15 +142,6 @@ export default function Navbar({
                       </button>
                       <button
                         onClick={() => {
-                          setActiveView('order-tracking');
-                          setProfileDropdownOpen(false);
-                        }}
-                        className="w-full text-left px-3.5 py-2 text-sm text-textDark dark:text-cream hover:bg-primary/10 rounded-xl transition-all"
-                      >
-                        Track Orders
-                      </button>
-                      <button
-                        onClick={() => {
                           logout();
                           setProfileDropdownOpen(false);
                         }}
@@ -247,13 +238,6 @@ export default function Navbar({
                 >
                   <User size={18} />
                   <span>My Account</span>
-                </button>
-                <button
-                  onClick={() => handleNavClick('order-tracking')}
-                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl text-cream/80 hover:text-cream hover:bg-white/10 text-left font-medium"
-                >
-                  <ShoppingCart size={18} />
-                  <span>Track Orders</span>
                 </button>
                 <div className="px-4 py-2 flex items-center justify-between border-t border-accent/5 mt-1">
                   <span className="text-xs text-cream/60 truncate max-w-[150px]">
