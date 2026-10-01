@@ -127,8 +127,8 @@ app.use(cors());
 app.use(express.json());
 
 const razorpay = new Razorpay({
-  key_id: process.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TDHCozKmm4gRkG',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || '9myLYhYlVDlFLJpD2byi66Cl'
+  key_id: process.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_TicVUUm3afwOjJ',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'apKCvMMq4ymHlO6iJjNaxuwD'
 });
 
 

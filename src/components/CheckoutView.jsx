@@ -207,7 +207,7 @@ export default function CheckoutView({
 
       // Step 2: Open Razorpay checkout modal
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TDHCozKmm4gRkG',
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_TicVUUm3afwOjJ',
         amount: data.amount,
         currency: 'INR',
         name: 'GymMillets',
