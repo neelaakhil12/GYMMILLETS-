@@ -11,7 +11,8 @@ export default function CartModal({
   onClearCart,
   onCheckout,
   appliedCoupon,
-  setAppliedCoupon
+  setAppliedCoupon,
+  storeSettings = { deliveryFee: 40, freeDeliveryThreshold: 500, gstPercentage: 5 }
 }) {
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
@@ -20,6 +21,10 @@ export default function CartModal({
   if (!isOpen) return null;
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+
+  const deliveryFee = Number(storeSettings?.deliveryFee ?? 40);
+  const freeThreshold = Number(storeSettings?.freeDeliveryThreshold ?? 500);
+  const gstPct = Number(storeSettings?.gstPercentage ?? 5);
 
   // Apply Coupon Logic
   const handleApplyCoupon = (e) => {
@@ -51,8 +56,8 @@ export default function CartModal({
   };
 
   const discountAmount = appliedCoupon ? (subtotal * appliedCoupon.discount) / 100 : 0;
-  const shippingFee = subtotal > 500 || subtotal === 0 ? 0 : 40;
-  const taxAmount = Math.round(subtotal * 0.05); // 5% GST
+  const shippingFee = (freeThreshold > 0 && subtotal >= freeThreshold) || subtotal === 0 ? 0 : deliveryFee;
+  const taxAmount = Math.round(subtotal * (gstPct / 100));
   const grandTotal = subtotal - discountAmount + shippingFee + taxAmount;
 
   return (
@@ -220,7 +225,7 @@ export default function CartModal({
                   </div>
                 )}
                 <div className="flex justify-between text-xs text-textLight dark:text-cream/60 font-medium">
-                  <span>GST (5%)</span>
+                  <span>GST ({gstPct}%)</span>
                   <span>₹{taxAmount}</span>
                 </div>
                 <div className="flex justify-between text-xs text-textLight dark:text-cream/60 font-medium">
@@ -231,9 +236,9 @@ export default function CartModal({
                     <span>₹{shippingFee}</span>
                   )}
                 </div>
-                {shippingFee > 0 && (
+                {shippingFee > 0 && freeThreshold > 0 && subtotal < freeThreshold && (
                   <p className="text-[9px] text-highlight font-medium">
-                    Add ₹{500 - subtotal} more to unlock <strong>FREE DELIVERY!</strong>
+                    Add ₹{freeThreshold - subtotal} more to unlock <strong>FREE DELIVERY!</strong>
                   </p>
                 )}
                 <div className="flex justify-between text-base font-outfit font-black text-textDark dark:text-cream border-t border-accent/10 pt-2.5 mt-1.5">

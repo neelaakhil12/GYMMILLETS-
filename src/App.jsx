@@ -4,11 +4,11 @@ import AOS from 'aos';
 // Importing Data & Sub-components
 import { PRODUCTS, TESTIMONIALS, WHY_CHOOSE_US, COUPONS } from './data/products';
 
-// Supabase DB helpers
 import {
   dbLoadProducts, dbAddProduct, dbUpdateProduct, dbDeleteProduct, subscribeToProducts,
   dbLoadOrders, dbSaveOrder, dbUpdateOrderStatus, dbUpdateOrderShippingDetails, subscribeToOrders,
-  dbLoadCoupons, dbAddCoupon, dbDeleteCoupon
+  dbLoadCoupons, dbAddCoupon, dbDeleteCoupon,
+  dbGetStoreSettings, dbSaveStoreSettings
 } from './hooks/useSupabase';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -218,6 +218,13 @@ export default function App() {
   // Orders State — strictly read from and written to Supabase as single source of truth
   const [orders, setOrders] = useState([]);
 
+  // Store Checkout Settings (delivery fee, free delivery threshold, GST %) — from Supabase admin_config
+  const [storeSettings, setStoreSettings] = useState({
+    deliveryFee: 40,
+    freeDeliveryThreshold: 500,
+    gstPercentage: 5,
+  });
+
   const [activeOrder, setActiveOrder] = useState(() => {
     try {
       const saved = localStorage.getItem('gymmillets_active_order');
@@ -328,6 +335,15 @@ export default function App() {
       .then(rows => { if (rows && rows.length > 0) setDbCoupons(rows); })
       .catch(() => { /* keep static COUPONS */ });
 
+    // Store Settings: load delivery fee, threshold, and GST % from Supabase admin_config
+    dbGetStoreSettings()
+      .then(settings => {
+        if (settings) {
+          setStoreSettings(settings);
+        }
+      })
+      .catch(() => {});
+
     return () => {
       if (unsubOrders) unsubOrders();
       if (unsubProducts) unsubProducts();
@@ -346,6 +362,12 @@ export default function App() {
       console.error('Failed to refresh orders from Supabase:', err);
     }
     return [];
+  };
+
+  // Helper to save store settings directly to Supabase admin_config
+  const handleSaveStoreSettings = async (newSettings) => {
+    await dbSaveStoreSettings(newSettings);
+    setStoreSettings(newSettings);
   };
 
 
@@ -1325,13 +1347,13 @@ export default function App() {
                         </div>
                       )}
                       <div className="flex justify-between text-textLight dark:text-cream/60 font-medium">
-                        <span>GST (5%)</span>
-                        <span>₹{Math.round(cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0) * 0.05)}</span>
+                        <span>GST ({storeSettings.gstPercentage}%)</span>
+                        <span>₹{Math.round(cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0) * (Number(storeSettings.gstPercentage) / 100))}</span>
                       </div>
                       <div className="flex justify-between text-textLight dark:text-cream/60 font-medium">
                         <span>Shipping</span>
-                        <span className={cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0) > 500 ? 'text-success font-bold' : ''}>
-                          {cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0) > 500 ? 'Free' : '₹40'}
+                        <span className={(Number(storeSettings.freeDeliveryThreshold) > 0 && cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0) >= Number(storeSettings.freeDeliveryThreshold)) ? 'text-success font-bold' : ''}>
+                          {(Number(storeSettings.freeDeliveryThreshold) > 0 && cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0) >= Number(storeSettings.freeDeliveryThreshold)) ? 'Free' : `₹${storeSettings.deliveryFee}`}
                         </span>
                       </div>
                       <div className="flex justify-between font-outfit font-black text-base text-textDark dark:text-cream border-t border-accent/10 pt-3 mt-1">
@@ -1340,8 +1362,9 @@ export default function App() {
                           (() => {
                             const sub = cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0);
                             const disc = appliedCoupon ? Math.round(sub * appliedCoupon.discount / 100) : 0;
-                            const ship = sub > 500 ? 0 : 40;
-                            const tax = Math.round(sub * 0.05);
+                            const threshold = Number(storeSettings.freeDeliveryThreshold);
+                            const ship = (threshold > 0 && sub >= threshold) || sub === 0 ? 0 : Number(storeSettings.deliveryFee);
+                            const tax = Math.round(sub * (Number(storeSettings.gstPercentage) / 100));
                             return sub - disc + ship + tax;
                           })()
                         }</span>
@@ -1397,6 +1420,8 @@ export default function App() {
               onDbAddCoupon={dbAddCoupon}
               onDbDeleteCoupon={dbDeleteCoupon}
               onRefreshOrders={refreshOrdersFromDb}
+              storeSettings={storeSettings}
+              onSaveStoreSettings={handleSaveStoreSettings}
               onAdminLogout={() => {
                 setIsAdminAuthenticated(false);
                 addToast('Logged out of Admin Panel.', 'info');
@@ -1414,6 +1439,7 @@ export default function App() {
             onPlaceOrder={handlePlaceOrder}
             setActiveView={setActiveView}
             currentUser={currentUser}
+            storeSettings={storeSettings}
           />
         )}
 

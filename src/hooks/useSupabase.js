@@ -163,6 +163,40 @@ export async function dbSetAdminPassword(newPassword) {
   if (error) throw error;
 }
 
+export async function dbGetStoreSettings() {
+  const { data, error } = await supabase
+    .from('admin_config')
+    .select('value')
+    .eq('key', 'store_settings')
+    .single();
+  if (error || !data?.value) {
+    return { deliveryFee: 40, freeDeliveryThreshold: 500, gstPercentage: 5 };
+  }
+  try {
+    const parsed = JSON.parse(data.value);
+    return {
+      deliveryFee: typeof parsed.deliveryFee === 'number' ? parsed.deliveryFee : 40,
+      freeDeliveryThreshold: typeof parsed.freeDeliveryThreshold === 'number' ? parsed.freeDeliveryThreshold : 500,
+      gstPercentage: typeof parsed.gstPercentage === 'number' ? parsed.gstPercentage : 5,
+    };
+  } catch {
+    return { deliveryFee: 40, freeDeliveryThreshold: 500, gstPercentage: 5 };
+  }
+}
+
+export async function dbSaveStoreSettings(settings) {
+  const payload = {
+    deliveryFee: Number(settings.deliveryFee) || 0,
+    freeDeliveryThreshold: Number(settings.freeDeliveryThreshold) || 0,
+    gstPercentage: Number(settings.gstPercentage) || 0,
+  };
+  const { error } = await supabase
+    .from('admin_config')
+    .upsert({ key: 'store_settings', value: JSON.stringify(payload) });
+  if (error) throw error;
+  return payload;
+}
+
 // ─────────────────────────────────────────────
 //  SHAPE CONVERTERS
 // ─────────────────────────────────────────────

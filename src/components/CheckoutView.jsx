@@ -7,7 +7,8 @@ export default function CheckoutView({
   appliedCoupon,
   onPlaceOrder,
   setActiveView,
-  currentUser
+  currentUser,
+  storeSettings
 }) {
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -91,10 +92,14 @@ export default function CheckoutView({
     );
   };
 
+  const deliveryFee = storeSettings?.deliveryFee !== undefined ? Number(storeSettings.deliveryFee) : 40;
+  const freeThreshold = storeSettings?.freeDeliveryThreshold !== undefined ? Number(storeSettings.freeDeliveryThreshold) : 500;
+  const gstPercentage = storeSettings?.gstPercentage !== undefined ? Number(storeSettings.gstPercentage) : 5;
+
   const subtotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
   const discountAmount = appliedCoupon ? (subtotal * appliedCoupon.discount) / 100 : 0;
-  const shippingFee = subtotal > 500 || subtotal === 0 ? 0 : 40;
-  const taxAmount = Math.round(subtotal * 0.05); // 5% GST
+  const shippingFee = (freeThreshold > 0 && subtotal >= freeThreshold) || subtotal === 0 ? 0 : deliveryFee;
+  const taxAmount = Math.round((subtotal * gstPercentage) / 100);
   const grandTotal = subtotal - discountAmount + shippingFee + taxAmount;
 
   const handleInputChange = (e) => {
@@ -617,11 +622,11 @@ export default function CheckoutView({
               </div>
             )}
             <div className="flex justify-between">
-              <span>GST (5%)</span>
+              <span>GST ({gstPercentage}%)</span>
               <span>₹{taxAmount}</span>
             </div>
             <div className="flex justify-between">
-              <span>Shipping Fee</span>
+              <span>Delivery Fee</span>
               {shippingFee === 0 ? (
                 <span className="text-success font-bold uppercase">Free</span>
               ) : (

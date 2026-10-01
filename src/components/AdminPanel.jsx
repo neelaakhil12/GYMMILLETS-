@@ -5,7 +5,7 @@ import {
   TrendingUp, Package, ClipboardList,
   Search, CheckCircle, Clock, ShoppingCart, Eye,
   LayoutGrid, LogOut, AlertTriangle, RefreshCw, Image,
-  Copy, ExternalLink
+  Copy, ExternalLink, Settings
 } from 'lucide-react';
 import { uploadImageToCloudinary } from '../lib/cloudinary';
 import { supabase } from '../lib/supabase';
@@ -58,8 +58,49 @@ export default function AdminPanel({
   onDbAddCoupon, onDbDeleteCoupon,
   onRefreshOrders,
   onAdminLogout,
+  storeSettings = { deliveryFee: 40, freeDeliveryThreshold: 500, gstPercentage: 5 },
+  onSaveStoreSettings,
 }) {
   const [tab, setTab] = useState('dashboard');
+
+  // ── Store Checkout Settings state ──────────────────────────────────────────
+  const [settingsForm, setSettingsForm] = useState({
+    deliveryFee: storeSettings?.deliveryFee ?? 40,
+    freeDeliveryThreshold: storeSettings?.freeDeliveryThreshold ?? 500,
+    gstPercentage: storeSettings?.gstPercentage ?? 5,
+  });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  useEffect(() => {
+    if (storeSettings) {
+      setSettingsForm({
+        deliveryFee: storeSettings.deliveryFee ?? 40,
+        freeDeliveryThreshold: storeSettings.freeDeliveryThreshold ?? 500,
+        gstPercentage: storeSettings.gstPercentage ?? 5,
+      });
+    }
+  }, [storeSettings]);
+
+  const handleSaveSettings = async (e) => {
+    e?.preventDefault();
+    setIsSavingSettings(true);
+    try {
+      const payload = {
+        deliveryFee: Math.max(0, Number(settingsForm.deliveryFee) || 0),
+        freeDeliveryThreshold: Math.max(0, Number(settingsForm.freeDeliveryThreshold) || 0),
+        gstPercentage: Math.max(0, Number(settingsForm.gstPercentage) || 0),
+      };
+      if (onSaveStoreSettings) {
+        await onSaveStoreSettings(payload);
+      }
+      onAddToast('Checkout delivery fee & GST percentage updated successfully!', 'success');
+    } catch (err) {
+      console.error(err);
+      onAddToast('Failed to save store settings.', 'error');
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
 
   // ── Product state ──────────────────────────────────────────────────────────
   const [showProductModal, setShowProductModal] = useState(false);
@@ -1013,6 +1054,7 @@ export default function AdminPanel({
     { id: 'orders',       label: 'Orders',       Icon: Truck,       badge: pendingOrders.length },
     { id: 'transactions', label: 'Transactions', Icon: RupeeIcon },
     { id: 'hero-slides',  label: 'Hero Slides',  Icon: Image },
+    { id: 'settings',     label: 'Settings',     Icon: Settings },
   ];
 
 
@@ -1075,36 +1117,6 @@ export default function AdminPanel({
                 )}
               </button>
             ))}
-          </Card>
-
-          {/* Database Keep-Alive Widget */}
-          <Card className="p-3.5 mt-3 space-y-2.5 bg-gradient-to-br from-white to-cream/30 dark:from-darkCard dark:to-[#171a17] border border-accent/15">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-bold text-textDark dark:text-cream">Supabase DB</span>
-              </div>
-              <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                Active
-              </span>
-            </div>
-            <p className="text-[10px] text-textLight dark:text-cream/50 leading-tight">
-              Auto-ping enabled via GitHub Action & Vercel Cron.
-            </p>
-            <button
-              onClick={() => handleManualPing(false)}
-              disabled={isPingingDb}
-              className="w-full py-1.5 px-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 dark:bg-success/15 dark:hover:bg-success/25 text-primary dark:text-success-light text-xs font-bold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
-              title="Ping Supabase database to reset the 7-day inactivity pause clock"
-            >
-              <RefreshCw size={11} className={isPingingDb ? 'animate-spin' : ''} />
-              <span>{isPingingDb ? 'Pinging...' : 'Ping DB Now'}</span>
-            </button>
-            {lastPingTime && (
-              <div className="text-[9px] text-textLight/70 dark:text-cream/40 text-center font-medium">
-                Last ping: {lastPingTime} {pingLatency ? `(${pingLatency}ms)` : ''}
-              </div>
-            )}
           </Card>
         </aside>
 
@@ -1763,6 +1775,233 @@ export default function AdminPanel({
                     );
                   })}
                 </div>
+              </Card>
+            </div>
+          )}
+
+          {/* ══════════════════ SETTINGS ══════════════════ */}
+          {tab === 'settings' && (
+            <div className="space-y-6">
+              {/* Settings Form Card */}
+              <Card className="p-6 sm:p-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-accent/10 gap-3">
+                  <div>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-primary/10 dark:bg-success/15 flex items-center justify-center text-primary dark:text-success-light">
+                        <Settings size={20} />
+                      </div>
+                      <h3 className="text-2xl font-outfit font-black text-textDark dark:text-cream">
+                        Checkout & Tax Settings
+                      </h3>
+                    </div>
+                    <p className="text-xs text-textLight dark:text-cream/50 mt-1.5 font-medium">
+                      Configure delivery charges, free shipping qualification threshold, and GST percentage applied at checkout.
+                    </p>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold shrink-0 self-start sm:self-auto">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Supabase Cloud Synced</span>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSaveSettings} className="space-y-6 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Standard Delivery Fee */}
+                    <div className="bg-cream/20 dark:bg-[#202020] p-5 rounded-2xl border border-accent/15 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-extrabold uppercase tracking-wider text-textDark dark:text-cream">
+                          Delivery Fee
+                        </label>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary dark:bg-success/15 dark:text-success-light">
+                          Per Order
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-textLight dark:text-cream/40">
+                          ₹
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          required
+                          value={settingsForm.deliveryFee}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, deliveryFee: e.target.value }))}
+                          className={`${inputCls} pl-8 w-full text-base font-bold`}
+                          placeholder="40"
+                        />
+                      </div>
+                      <p className="text-[11px] text-textLight dark:text-cream/50 leading-relaxed">
+                        Base delivery charge applied to orders that do not qualify for free delivery.
+                      </p>
+                    </div>
+
+                    {/* Free Delivery Threshold */}
+                    <div className="bg-cream/20 dark:bg-[#202020] p-5 rounded-2xl border border-accent/15 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-extrabold uppercase tracking-wider text-textDark dark:text-cream">
+                          Free Delivery Above
+                        </label>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-success/15 text-success">
+                          Threshold
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-textLight dark:text-cream/40">
+                          ₹
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          required
+                          value={settingsForm.freeDeliveryThreshold}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, freeDeliveryThreshold: e.target.value }))}
+                          className={`${inputCls} pl-8 w-full text-base font-bold`}
+                          placeholder="500"
+                        />
+                      </div>
+                      <p className="text-[11px] text-textLight dark:text-cream/50 leading-relaxed">
+                        Orders with subtotal equal to or exceeding this qualify for 100% Free Shipping.
+                      </p>
+                    </div>
+
+                    {/* GST Percentage */}
+                    <div className="bg-cream/20 dark:bg-[#202020] p-5 rounded-2xl border border-accent/15 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-extrabold uppercase tracking-wider text-textDark dark:text-cream">
+                          GST Percentage
+                        </label>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary dark:bg-success/15 dark:text-success-light">
+                          Tax Rate
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.5"
+                          required
+                          value={settingsForm.gstPercentage}
+                          onChange={(e) => setSettingsForm(prev => ({ ...prev, gstPercentage: e.target.value }))}
+                          className={`${inputCls} pr-8 w-full text-base font-bold`}
+                          placeholder="5"
+                        />
+                        <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-textLight dark:text-cream/40">
+                          %
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-textLight dark:text-cream/50 leading-relaxed">
+                        Goods & Services Tax added to subtotal at checkout & on invoices (e.g. 5%).
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Live Simulation Preview */}
+                  <div className="bg-cream/40 dark:bg-[#1a1a1a] rounded-2xl p-5 border border-accent/15 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-extrabold uppercase tracking-wider text-textDark dark:text-cream flex items-center gap-1.5">
+                        <span>⚡ Live Checkout Preview (Simulation)</span>
+                      </h4>
+                      <span className="text-[10px] text-textLight dark:text-cream/40 font-medium">
+                        Instant calculation with current values
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                      {/* Scenario 1: Standard Order (Below threshold) */}
+                      <div className="bg-white dark:bg-darkCard p-4 rounded-xl border border-accent/10 space-y-2 text-xs">
+                        <div className="flex justify-between items-center pb-1 border-b border-accent/10">
+                          <span className="font-bold text-textDark dark:text-cream">Scenario A: ₹300 Order</span>
+                          <span className="text-[10px] text-highlight font-semibold">Standard Shipping</span>
+                        </div>
+                        <div className="flex justify-between text-textLight dark:text-cream/60">
+                          <span>Items Subtotal:</span>
+                          <span>₹300</span>
+                        </div>
+                        <div className="flex justify-between text-textLight dark:text-cream/60">
+                          <span>GST ({settingsForm.gstPercentage}%):</span>
+                          <span>₹{Math.round(300 * (Number(settingsForm.gstPercentage || 0) / 100))}</span>
+                        </div>
+                        <div className="flex justify-between text-textLight dark:text-cream/60">
+                          <span>Delivery Fee:</span>
+                          <span>₹{300 >= Number(settingsForm.freeDeliveryThreshold || 0) && Number(settingsForm.freeDeliveryThreshold) > 0 ? 0 : Number(settingsForm.deliveryFee || 0)}</span>
+                        </div>
+                        <div className="flex justify-between font-bold text-textDark dark:text-cream pt-1 border-t border-accent/10">
+                          <span>Estimated Total:</span>
+                          <span>₹{300 + Math.round(300 * (Number(settingsForm.gstPercentage || 0) / 100)) + (300 >= Number(settingsForm.freeDeliveryThreshold || 0) && Number(settingsForm.freeDeliveryThreshold) > 0 ? 0 : Number(settingsForm.deliveryFee || 0))}</span>
+                        </div>
+                      </div>
+
+                      {/* Scenario 2: Eligible for Free Delivery */}
+                      <div className="bg-white dark:bg-darkCard p-4 rounded-xl border border-accent/10 space-y-2 text-xs">
+                        <div className="flex justify-between items-center pb-1 border-b border-accent/10">
+                          <span className="font-bold text-textDark dark:text-cream">
+                            Scenario B: ₹{Math.max(600, Number(settingsForm.freeDeliveryThreshold || 500))} Order
+                          </span>
+                          <span className="text-[10px] text-success font-semibold">Free Delivery</span>
+                        </div>
+                        {(() => {
+                          const sub = Math.max(600, Number(settingsForm.freeDeliveryThreshold || 500));
+                          const gst = Math.round(sub * (Number(settingsForm.gstPercentage || 0) / 100));
+                          const ship = sub >= Number(settingsForm.freeDeliveryThreshold || 0) && Number(settingsForm.freeDeliveryThreshold) > 0 ? 0 : Number(settingsForm.deliveryFee || 0);
+                          return (
+                            <>
+                              <div className="flex justify-between text-textLight dark:text-cream/60">
+                                <span>Items Subtotal:</span>
+                                <span>₹{sub}</span>
+                              </div>
+                              <div className="flex justify-between text-textLight dark:text-cream/60">
+                                <span>GST ({settingsForm.gstPercentage}%):</span>
+                                <span>₹{gst}</span>
+                              </div>
+                              <div className="flex justify-between text-textLight dark:text-cream/60">
+                                <span>Delivery Fee:</span>
+                                <span className={ship === 0 ? "text-success font-bold" : ""}>
+                                  {ship === 0 ? "FREE" : `₹${ship}`}
+                                </span>
+                              </div>
+                              <div className="flex justify-between font-bold text-textDark dark:text-cream pt-1 border-t border-accent/10">
+                                <span>Estimated Total:</span>
+                                <span>₹{sub + gst + ship}</span>
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between pt-4 border-t border-accent/10 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSettingsForm({ deliveryFee: 40, freeDeliveryThreshold: 500, gstPercentage: 5 })}
+                      className="px-4 py-2.5 rounded-xl border border-accent/20 text-xs font-bold text-textLight dark:text-cream/60 hover:text-textDark dark:hover:text-cream hover:bg-cream dark:hover:bg-white/5 transition-colors"
+                    >
+                      Reset to Defaults (₹40, ₹500, 5%)
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={isSavingSettings}
+                      className="px-8 py-3.5 rounded-full bg-primary hover:bg-primary-dark text-cream font-bold text-sm shadow-premium flex items-center justify-center gap-2 scale-100 active:scale-95 transition-all disabled:opacity-50"
+                    >
+                      {isSavingSettings ? (
+                        <>
+                          <Loader size={16} className="animate-spin" />
+                          <span>Saving to Supabase...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check size={16} />
+                          <span>Save Settings</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
               </Card>
             </div>
           )}
