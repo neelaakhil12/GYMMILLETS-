@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { User, Calendar, DollarSign, CreditCard, ChevronRight, FileText, Smartphone, Edit2, Check, X, Shield, MapPin, Eye } from 'lucide-react';
+import { User, Calendar, DollarSign, CreditCard, ChevronRight, FileText, Smartphone, Edit2, Check, X, Shield, MapPin, Eye, Truck, Copy, ExternalLink } from 'lucide-react';
 
 export default function UserAccount({ currentUser, setCurrentUser, orders, setActiveView, onAddToast }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [copiedId, setCopiedId]   = useState(null);
   const [editForm, setEditForm] = useState({
     name: currentUser?.name || '',
     mobile: currentUser?.mobile || ''
@@ -28,6 +29,51 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
     localStorage.setItem('currentUser', JSON.stringify(updatedUser));
     setIsEditing(false);
     onAddToast('Profile details updated successfully!', 'success');
+  };
+
+  const handleCopyTrackingId = (trackingId) => {
+    if (!trackingId) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(trackingId).then(() => {
+        setCopiedId(trackingId);
+        setTimeout(() => setCopiedId(null), 2500);
+        onAddToast(`Tracking ID "${trackingId}" copied to clipboard!`, 'success');
+      }).catch(() => {
+        onAddToast(`Tracking ID: ${trackingId}`, 'info');
+      });
+    } else {
+      const textArea = document.createElement('textarea');
+      textArea.value = trackingId;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopiedId(trackingId);
+        setTimeout(() => setCopiedId(null), 2500);
+        onAddToast(`Tracking ID "${trackingId}" copied to clipboard!`, 'success');
+      } catch (err) {
+        onAddToast(`Tracking ID: ${trackingId}`, 'info');
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  const handleTrackOrderClick = (order) => {
+    const trackingId = order.shippingDetails?.trackingId;
+    const courierUrl = order.shippingDetails?.courierTrackingUrl || 'https://www.dtdc.in/';
+
+    if (trackingId) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(trackingId).catch(() => {});
+      }
+      setCopiedId(trackingId);
+      setTimeout(() => setCopiedId(null), 3500);
+      onAddToast(`Tracking ID "${trackingId}" copied! Opening DTDC courier portal...`, 'success');
+    } else {
+      onAddToast('Opening DTDC courier portal...', 'info');
+    }
+
+    window.open(courierUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleDownloadInvoice = (order) => {
@@ -359,6 +405,85 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
                         ))}
                       </div>
 
+                      {/* DTDC Courier Delivery & Tracking Details Card */}
+                      {(order.shippingDetails?.trackingId || order.shippingDetails?.courierTrackingUrl || order.status === 'Out for Delivery') && (
+                        <div className="bg-gradient-to-r from-purple-500/10 via-primary/5 to-transparent dark:from-purple-500/15 dark:via-cream-dark/5 dark:to-transparent border border-purple-500/25 dark:border-purple-400/25 rounded-2xl p-4 space-y-3 shadow-sm">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                                <Truck size={20} />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[10px] font-extrabold uppercase tracking-widest bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2.5 py-0.5 rounded-full">
+                                    DTDC Express Courier
+                                  </span>
+                                  {order.status === 'Out for Delivery' && (
+                                    <span className="text-[10px] font-bold text-success animate-pulse flex items-center gap-1">
+                                      ● Out for Delivery
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs font-bold text-textDark dark:text-cream mt-0.5">
+                                  {order.status === 'Out for Delivery'
+                                    ? 'Your package is out for delivery with DTDC Courier!'
+                                    : `Dispatched via DTDC (${order.status})`}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Tracking ID Badge with 1-click Copy */}
+                            {order.shippingDetails?.trackingId ? (
+                              <div className="flex items-center gap-2 bg-white dark:bg-[#222222] border border-purple-500/25 px-3 py-1.5 rounded-xl shadow-sm self-start sm:self-auto">
+                                <span className="text-[10px] font-extrabold uppercase text-textLight dark:text-cream/50 tracking-wider">
+                                  Tracking ID:
+                                </span>
+                                <code className="text-xs font-mono font-black text-purple-700 dark:text-purple-300 select-all">
+                                  {order.shippingDetails.trackingId}
+                                </code>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyTrackingId(order.shippingDetails.trackingId)}
+                                  className="ml-1 text-[11px] font-extrabold text-primary dark:text-success-light hover:underline flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-primary/10 transition-colors"
+                                  title="Copy Tracking ID"
+                                >
+                                  {copiedId === order.shippingDetails.trackingId ? (
+                                    <span className="text-success flex items-center gap-0.5 font-bold">
+                                      <Check size={12} /> Copied!
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center gap-0.5 font-bold">
+                                      <Copy size={12} /> Copy
+                                    </span>
+                                  )}
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-textLight dark:text-cream/50 italic">
+                                Tracking ID being generated by DTDC
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Info & Track Your Order Button */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-purple-500/15">
+                            <p className="text-[11px] text-textLight dark:text-cream/60 leading-tight">
+                              Click <strong className="text-textDark dark:text-cream font-bold">"Track Your Order"</strong> to copy your tracking ID and jump directly to DTDC tracking.
+                            </p>
+
+                            <button
+                              type="button"
+                              onClick={() => handleTrackOrderClick(order)}
+                              className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-primary hover:from-purple-700 hover:to-primary-dark text-white rounded-xl text-xs font-black shadow-md flex items-center justify-center gap-2 transition-all active:scale-95 hover:shadow-lg shrink-0"
+                            >
+                              <Truck size={14} />
+                              <span>Track Your Order</span>
+                              <ExternalLink size={12} className="opacity-80" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Order Footer Actions */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-2 gap-3">
                         <div className="flex items-center gap-1.5 text-xs text-textLight dark:text-cream/50">
@@ -370,15 +495,14 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
 
                         <div className="flex items-center gap-2 self-end sm:self-auto">
                           {order.shippingDetails?.courierTrackingUrl && (
-                            <a
-                              href={order.shippingDetails.courierTrackingUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              type="button"
+                              onClick={() => handleTrackOrderClick(order)}
                               className="px-3.5 py-1.5 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-full text-xs font-bold shadow-sm flex items-center gap-1 transition-all active:scale-95"
                             >
                               <span>🚚</span>
-                              <span>Track Order</span>
-                            </a>
+                              <span>Track Your Order</span>
+                            </button>
                           )}
                           
                           <button

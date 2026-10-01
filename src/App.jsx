@@ -1293,6 +1293,8 @@ export default function App() {
               setProducts={setProducts}
               orders={orders}
               setOrders={setOrders}
+              activeOrder={activeOrder}
+              setActiveOrder={setActiveOrder}
               categories={managedCategories}
               onUpdateCategories={setManagedCategories}
               dbCoupons={dbCoupons}
@@ -1400,6 +1402,7 @@ export default function App() {
           <OrderTrackingView
             activeOrder={activeOrder}
             setActiveView={setActiveView}
+            onAddToast={addToast}
           />
         )}
 

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingBag, MapPin, Truck, Phone, MessageSquare, ShieldCheck, Clock, CheckCircle } from 'lucide-react';
+import { ShoppingBag, MapPin, Truck, Phone, MessageSquare, ShieldCheck, Clock, CheckCircle, Copy, ExternalLink, Check } from 'lucide-react';
 
-export default function OrderTrackingView({ activeOrder, setActiveView }) {
+export default function OrderTrackingView({ activeOrder, setActiveView, onAddToast }) {
+  const [copiedId, setCopiedId] = useState(null);
   const [dots, setDots] = useState('');
 
   // Floating dots animation for loading states
@@ -52,6 +53,51 @@ export default function OrderTrackingView({ activeOrder, setActiveView }) {
       case 'Delivered': return 4;
       default: return 0;
     }
+  };
+
+  const handleCopyTrackingId = (trackingId) => {
+    if (!trackingId) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(trackingId).then(() => {
+        setCopiedId(trackingId);
+        setTimeout(() => setCopiedId(null), 2500);
+        if (onAddToast) onAddToast(`Tracking ID "${trackingId}" copied to clipboard!`, 'success');
+      }).catch(() => {
+        if (onAddToast) onAddToast(`Tracking ID: ${trackingId}`, 'info');
+      });
+    } else {
+      const textArea = document.createElement('textarea');
+      textArea.value = trackingId;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setCopiedId(trackingId);
+        setTimeout(() => setCopiedId(null), 2500);
+        if (onAddToast) onAddToast(`Tracking ID "${trackingId}" copied!`, 'success');
+      } catch (err) {
+        if (onAddToast) onAddToast(`Tracking ID: ${trackingId}`, 'info');
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  const handleTrackOrderClick = (order) => {
+    const trackingId = order.shippingDetails?.trackingId;
+    const courierUrl = order.shippingDetails?.courierTrackingUrl || 'https://www.dtdc.in/';
+
+    if (trackingId) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(trackingId).catch(() => {});
+      }
+      setCopiedId(trackingId);
+      setTimeout(() => setCopiedId(null), 3500);
+      if (onAddToast) onAddToast(`Tracking ID "${trackingId}" copied! Opening DTDC courier portal...`, 'success');
+    } else {
+      if (onAddToast) onAddToast('Opening DTDC courier tracking portal...', 'info');
+    }
+
+    window.open(courierUrl, '_blank', 'noopener,noreferrer');
   };
 
   const activeIndex = getMilestoneIndex(activeOrder.status);
@@ -149,6 +195,83 @@ export default function OrderTrackingView({ activeOrder, setActiveView }) {
             );
           })}
         </div>
+
+        {/* DTDC Courier Live Consignment Tracking Card */}
+        {(activeOrder.shippingDetails?.trackingId || activeOrder.shippingDetails?.courierTrackingUrl || activeOrder.status === 'Out for Delivery') && (
+          <div className="bg-gradient-to-r from-purple-500/10 via-primary/5 to-transparent dark:from-purple-500/15 dark:via-cream-dark/5 dark:to-transparent border border-purple-500/25 dark:border-purple-400/25 rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                  <Truck size={24} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2.5 py-0.5 rounded-full">
+                      DTDC Express Logistics
+                    </span>
+                    {activeOrder.status === 'Out for Delivery' && (
+                      <span className="text-[10px] font-bold text-success animate-pulse flex items-center gap-1">
+                        ● Out for Delivery
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-base font-outfit font-black text-textDark dark:text-cream mt-0.5">
+                    {activeOrder.status === 'Out for Delivery' ? 'Your package is Out for Delivery!' : `Shipment Status: ${activeOrder.status}`}
+                  </h3>
+                  <p className="text-xs text-textLight dark:text-cream/60 font-medium">
+                    Consignment Destination: {activeOrder.shippingDetails?.city} ({activeOrder.shippingDetails?.pincode})
+                  </p>
+                </div>
+              </div>
+
+              {/* Tracking ID with Copy */}
+              {activeOrder.shippingDetails?.trackingId ? (
+                <div className="flex items-center gap-2 bg-white dark:bg-[#202020] border border-purple-500/25 px-3.5 py-2 rounded-2xl shadow-sm self-start sm:self-auto">
+                  <div>
+                    <span className="text-[9px] font-extrabold uppercase text-textLight dark:text-cream/50 tracking-wider block">
+                      DTDC Tracking ID
+                    </span>
+                    <code className="text-sm font-mono font-black text-purple-700 dark:text-purple-300 select-all">
+                      {activeOrder.shippingDetails.trackingId}
+                    </code>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyTrackingId(activeOrder.shippingDetails.trackingId)}
+                    className="ml-2 text-xs font-extrabold text-primary dark:text-success-light hover:underline flex items-center gap-1 px-2 py-1 rounded-xl hover:bg-primary/10 transition-colors"
+                    title="Copy Tracking ID"
+                  >
+                    {copiedId === activeOrder.shippingDetails.trackingId ? (
+                      <span className="text-success flex items-center gap-1 font-bold">
+                        <Check size={14} /> Copied!
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 font-bold">
+                        <Copy size={14} /> Copy
+                      </span>
+                    )}
+                  </button>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-purple-500/15">
+              <p className="text-xs text-textLight dark:text-cream/60">
+                Click <strong className="text-textDark dark:text-cream font-bold">"Track Your Order"</strong> to copy the tracking ID and jump directly to the DTDC tracking portal.
+              </p>
+
+              <button
+                type="button"
+                onClick={() => handleTrackOrderClick(activeOrder)}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-primary hover:from-purple-700 hover:to-primary-dark text-white rounded-2xl text-xs font-black shadow-premium flex items-center justify-center gap-2 transition-all active:scale-95 hover:shadow-premium-hover shrink-0"
+              >
+                <Truck size={15} />
+                <span>Track Your Order</span>
+                <ExternalLink size={13} className="opacity-80" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Courier Details Card */}
         {activeOrder.status !== 'Delivered' && activeIndex >= 2 && (

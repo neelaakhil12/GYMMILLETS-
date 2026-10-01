@@ -4,7 +4,8 @@ import {
   Percent, Truck, X, Upload, Loader, Download, Tag, ImageOff,
   TrendingUp, Package, ClipboardList,
   Search, CheckCircle, Clock, ShoppingCart, Eye,
-  LayoutGrid, LogOut, AlertTriangle, RefreshCw, Image
+  LayoutGrid, LogOut, AlertTriangle, RefreshCw, Image,
+  Copy, ExternalLink
 } from 'lucide-react';
 import { uploadImageToCloudinary } from '../lib/cloudinary';
 import { supabase } from '../lib/supabase';
@@ -46,6 +47,7 @@ const emptyProductForm = (firstCat = 'Ready Mix') => ({
 export default function AdminPanel({
   products, setProducts,
   orders, setOrders,
+  activeOrder, setActiveOrder,
   categories, onUpdateCategories,
   dbCoupons, setDbCoupons,
   heroSlides = [], onUpdateHeroSlides,
@@ -68,35 +70,46 @@ export default function AdminPanel({
   const [productForm, setProductForm]           = useState(emptyProductForm(categories?.[0]?.name));
   const [deleteConfirm, setDeleteConfirm]       = useState(null); // product id to confirm delete
   const [selectedViewOrder, setSelectedViewOrder] = useState(null);
-  const [trackingInput, setTrackingInput]       = useState('');
+  const [trackingInput, setTrackingInput]         = useState('');
+  const [trackingIdInput, setTrackingIdInput]     = useState('');
+  const [outForDeliveryModal, setOutForDeliveryModal] = useState(null);
 
   useEffect(() => {
     if (selectedViewOrder) {
-      setTrackingInput(selectedViewOrder.shippingDetails?.courierTrackingUrl || '');
+      setTrackingInput(selectedViewOrder.shippingDetails?.courierTrackingUrl || 'https://www.dtdc.in/');
+      setTrackingIdInput(selectedViewOrder.shippingDetails?.trackingId || '');
     }
   }, [selectedViewOrder]);
 
   const handleSaveTracking = async () => {
     if (!selectedViewOrder) return;
+    const finalUrl = (trackingInput || 'https://www.dtdc.in/').trim();
+    const finalId = (trackingIdInput || '').trim();
+
     const updatedShipping = {
       ...selectedViewOrder.shippingDetails,
-      courierTrackingUrl: trackingInput
+      courierName: 'DTDC',
+      courierTrackingUrl: finalUrl,
+      trackingId: finalId
     };
     
     // Update in memory
     setOrders(prev => prev.map(o => o.id === selectedViewOrder.id ? { ...o, shippingDetails: updatedShipping } : o));
     setSelectedViewOrder(prev => ({ ...prev, shippingDetails: updatedShipping }));
+    if (activeOrder?.id === selectedViewOrder.id && setActiveOrder) {
+      setActiveOrder(prev => ({ ...prev, shippingDetails: updatedShipping }));
+    }
     
     // Persist to Supabase
     if (onDbUpdateOrderShippingDetails) {
       try {
         await onDbUpdateOrderShippingDetails(selectedViewOrder.id, updatedShipping);
-        onAddToast('Tracking URL updated successfully!', 'success');
+        onAddToast('DTDC courier details updated successfully!', 'success');
       } catch (err) {
-        onAddToast('Failed to update tracking URL in database.', 'warning');
+        onAddToast('Failed to update tracking details in database.', 'warning');
       }
     } else {
-      onAddToast('Tracking URL updated in session.', 'success');
+      onAddToast('Tracking details updated in session.', 'success');
     }
   };
 
@@ -888,8 +901,64 @@ export default function AdminPanel({
   // ── Order Handlers ─────────────────────────────────────────────────────────
   const handleUpdateStatus = (orderId, status) => {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+    if (activeOrder?.id === orderId && setActiveOrder) {
+      setActiveOrder(prev => ({ ...prev, status }));
+    }
     onAddToast(`Order ${orderId} → ${status}`, 'success');
     if (onDbUpdateOrderStatus) onDbUpdateOrderStatus(orderId, status).catch(() => {});
+  };
+
+  const handleOrderStatusSelectChange = (order, newStatus) => {
+    if (newStatus === 'Out for Delivery') {
+      setOutForDeliveryModal({
+        order,
+        dtdcTrackingUrl: order.shippingDetails?.courierTrackingUrl || 'https://www.dtdc.in/',
+        trackingId: order.shippingDetails?.trackingId || '',
+      });
+    } else {
+      handleUpdateStatus(order.id, newStatus);
+    }
+  };
+
+  const handleConfirmOutForDelivery = async (e) => {
+    if (e) e.preventDefault();
+    if (!outForDeliveryModal) return;
+    const { order, dtdcTrackingUrl, trackingId } = outForDeliveryModal;
+
+    const finalTrackingUrl = (dtdcTrackingUrl || 'https://www.dtdc.in/').trim();
+    const finalTrackingId = (trackingId || '').trim();
+
+    const updatedShipping = {
+      ...order.shippingDetails,
+      courierName: 'DTDC',
+      courierTrackingUrl: finalTrackingUrl,
+      trackingId: finalTrackingId,
+    };
+
+    const updatedOrder = {
+      ...order,
+      status: 'Out for Delivery',
+      shippingDetails: updatedShipping,
+    };
+
+    setOrders(prev => prev.map(o => o.id === order.id ? updatedOrder : o));
+    if (activeOrder?.id === order.id && setActiveOrder) {
+      setActiveOrder(updatedOrder);
+    }
+    if (selectedViewOrder?.id === order.id) {
+      setSelectedViewOrder(updatedOrder);
+    }
+
+    onAddToast(`Order ${order.id} marked Out for Delivery with DTDC tracking!`, 'success');
+    setOutForDeliveryModal(null);
+
+    // Persist to Supabase
+    try {
+      if (onDbUpdateOrderStatus) await onDbUpdateOrderStatus(order.id, 'Out for Delivery');
+      if (onDbUpdateOrderShippingDetails) await onDbUpdateOrderShippingDetails(order.id, updatedShipping);
+    } catch (err) {
+      console.error('Failed to update order tracking to Supabase:', err);
+    }
   };
 
   // ── Coupon Handlers ────────────────────────────────────────────────────────
@@ -1395,13 +1464,30 @@ export default function AdminPanel({
                           <td className="py-3.5 text-right">
                             <select
                               value={o.status}
-                              onChange={e => handleUpdateStatus(o.id, e.target.value)}
+                              onChange={e => handleOrderStatusSelectChange(o, e.target.value)}
                               className="text-xs font-bold bg-cream/60 dark:bg-[#252525] border border-accent/20 rounded-xl px-2.5 py-2 text-textDark dark:text-cream focus:outline-none cursor-pointer"
                             >
                               {['Placed','Confirmed','Preparing','Out for Delivery','Delivered'].map(s => (
                                 <option key={s} value={s}>{s}</option>
                               ))}
                             </select>
+                            {o.shippingDetails?.trackingId && (
+                              <div className="mt-1 flex items-center justify-end">
+                                <button
+                                  type="button"
+                                  onClick={() => setOutForDeliveryModal({
+                                    order: o,
+                                    dtdcTrackingUrl: o.shippingDetails?.courierTrackingUrl || 'https://www.dtdc.in/',
+                                    trackingId: o.shippingDetails?.trackingId || '',
+                                  })}
+                                  title="Click to edit DTDC tracking details"
+                                  className="text-[10px] font-mono font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors"
+                                >
+                                  <Truck size={10} />
+                                  <span>DTDC: {o.shippingDetails.trackingId}</span>
+                                </button>
+                              </div>
+                            )}
                           </td>
                           <td className="py-3.5 text-right">
                             <button
@@ -1918,22 +2004,45 @@ export default function AdminPanel({
                   </p>
                 )}
                 
-                <div className="mt-3 pt-3 border-t border-accent/10 space-y-2">
-                  <label className="block text-[10px] font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">Courier Tracking Link</label>
-                  <div className="flex gap-2">
+                <div className="mt-3 pt-3 border-t border-accent/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] font-extrabold uppercase tracking-wider text-textLight dark:text-cream/40">
+                      DTDC Courier Logistics Details
+                    </label>
+                    <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">
+                      DTDC Express
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-textLight dark:text-cream/60">DTDC Tracking ID / AWB Number:</span>
                     <input
-                      type="url"
-                      placeholder="e.g. https://www.dtdc.in/tracking/..."
-                      value={trackingInput}
-                      onChange={e => setTrackingInput(e.target.value)}
-                      className="flex-grow bg-white dark:bg-[#252525] border border-accent/25 rounded-xl px-3 py-2 text-xs font-semibold text-textDark dark:text-cream focus:outline-none focus:border-primary"
+                      type="text"
+                      placeholder="e.g. D12345678, B98765432"
+                      value={trackingIdInput}
+                      onChange={e => setTrackingIdInput(e.target.value)}
+                      className="w-full bg-white dark:bg-[#252525] border border-accent/25 rounded-xl px-3 py-2 text-xs font-mono font-bold text-textDark dark:text-cream focus:outline-none focus:border-purple-500"
                     />
-                    <button
-                      onClick={handleSaveTracking}
-                      className="px-3.5 py-2 bg-primary hover:bg-primary-dark text-cream font-bold text-xs rounded-xl active:scale-95 transition-all shadow-premium"
-                    >
-                      Save
-                    </button>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-textLight dark:text-cream/60">DTDC Courier Tracking Link:</span>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        placeholder="https://www.dtdc.in/"
+                        value={trackingInput}
+                        onChange={e => setTrackingInput(e.target.value)}
+                        className="flex-grow bg-white dark:bg-[#252525] border border-accent/25 rounded-xl px-3 py-2 text-xs font-semibold text-textDark dark:text-cream focus:outline-none focus:border-purple-500"
+                      />
+                      <button
+                        onClick={handleSaveTracking}
+                        className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-cream font-bold text-xs rounded-xl active:scale-95 transition-all shadow-premium shrink-0 flex items-center gap-1"
+                      >
+                        <Check size={12} />
+                        <span>Save DTDC</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2002,6 +2111,158 @@ export default function AdminPanel({
                 Close View
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════ OUT FOR DELIVERY DTDC MODAL ══════════════════ */}
+      {outForDeliveryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-white dark:bg-darkCard border border-accent/20 dark:border-accent/10 rounded-3xl shadow-2xl p-6 sm:p-7 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-start border-b border-accent/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-2xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                  <Truck size={22} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2.5 py-0.5 rounded-full">
+                      Out for Delivery
+                    </span>
+                    <span className="text-xs font-mono font-bold text-textLight dark:text-cream/50">
+                      Order #{outForDeliveryModal.order.id}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-outfit font-black text-textDark dark:text-cream mt-0.5">
+                    DTDC Courier Details
+                  </h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOutForDeliveryModal(null)}
+                className="p-2 text-textLight hover:text-textDark dark:text-cream/50 dark:hover:text-cream rounded-full hover:bg-cream/40 dark:hover:bg-white/5 transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Destination Customer Info Mini Card */}
+            <div className="bg-cream/30 dark:bg-white/2 border border-accent/10 rounded-2xl p-3.5 flex items-center justify-between text-xs">
+              <div>
+                <p className="font-extrabold text-textDark dark:text-cream">
+                  {outForDeliveryModal.order.shippingDetails?.name || 'Customer'}
+                </p>
+                <p className="text-[11px] text-textLight dark:text-cream/60 mt-0.5">
+                  📍 {outForDeliveryModal.order.shippingDetails?.city} - {outForDeliveryModal.order.shippingDetails?.pincode} • +91 {outForDeliveryModal.order.shippingDetails?.mobile}
+                </p>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] uppercase font-bold text-textLight dark:text-cream/40 block">Amount</span>
+                <span className="font-black text-textDark dark:text-cream text-sm">₹{outForDeliveryModal.order.total}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmOutForDelivery} className="space-y-4">
+              {/* Field 1: DTDC Courier Tracking ID */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-extrabold text-textDark dark:text-cream uppercase tracking-wider">
+                  DTDC Tracking ID / AWB Number <span className="text-primary">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  placeholder="e.g. D39847120, B9823412, etc."
+                  value={outForDeliveryModal.trackingId}
+                  onChange={e => setOutForDeliveryModal(prev => ({ ...prev, trackingId: e.target.value }))}
+                  className="w-full bg-cream/40 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 text-sm font-mono font-bold text-textDark dark:text-cream focus:outline-none focus:border-purple-500 transition-colors"
+                />
+                <p className="text-[11px] text-textLight dark:text-cream/50">
+                  Customers will see this tracking ID in their account with a 1-click copy button.
+                </p>
+              </div>
+
+              {/* Field 2: DTDC Courier Tracking Link */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-extrabold text-textDark dark:text-cream uppercase tracking-wider">
+                    DTDC Courier Tracking Link <span className="text-primary">*</span>
+                  </label>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setOutForDeliveryModal(prev => ({ ...prev, dtdcTrackingUrl: 'https://www.dtdc.in/' }))}
+                      className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline"
+                    >
+                      dtdc.in
+                    </button>
+                    <span className="text-[10px] text-accent/30">•</span>
+                    <button
+                      type="button"
+                      onClick={() => setOutForDeliveryModal(prev => ({ ...prev, dtdcTrackingUrl: 'https://track.dtdc.com/' }))}
+                      className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline"
+                    >
+                      track.dtdc.com
+                    </button>
+                  </div>
+                </div>
+                <input
+                  type="url"
+                  required
+                  placeholder="https://www.dtdc.in/"
+                  value={outForDeliveryModal.dtdcTrackingUrl}
+                  onChange={e => setOutForDeliveryModal(prev => ({ ...prev, dtdcTrackingUrl: e.target.value }))}
+                  className="w-full bg-cream/40 dark:bg-[#252525] border border-accent/25 rounded-2xl px-4 py-3 text-xs font-medium text-textDark dark:text-cream focus:outline-none focus:border-purple-500 transition-colors"
+                />
+                <p className="text-[11px] text-textLight dark:text-cream/50">
+                  Linked to the "Track Your Order" button on the user's account page.
+                </p>
+              </div>
+
+              {/* Live Preview Card */}
+              <div className="bg-purple-500/5 dark:bg-purple-500/10 border border-purple-500/20 rounded-2xl p-3.5 space-y-2">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                  Live Customer Account Preview:
+                </p>
+                <div className="flex flex-wrap items-center justify-between gap-2 bg-white dark:bg-[#202020] p-2.5 rounded-xl border border-accent/10">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-textLight dark:text-cream/60 uppercase">AWB:</span>
+                    <code className="text-xs font-mono font-black text-textDark dark:text-cream">
+                      {outForDeliveryModal.trackingId || 'DXXXXXXX'}
+                    </code>
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-purple-600 to-primary text-white rounded-lg text-[10px] font-bold">
+                    <Truck size={11} />
+                    <span>Track Your Order</span>
+                  </div>
+                </div>
+                <p className="text-[10px] text-textLight dark:text-cream/50 italic">
+                  When customer clicks "Track Your Order", the Tracking ID is automatically copied to clipboard and DTDC portal opens in a new tab.
+                </p>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setOutForDeliveryModal(null)}
+                  className="px-5 py-2.5 rounded-xl border border-accent/20 hover:bg-cream/40 dark:hover:bg-white/5 text-textLight dark:text-cream/70 font-bold text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs shadow-premium hover:shadow-premium-hover active:scale-95 transition-all flex items-center gap-2"
+                >
+                  <Truck size={14} />
+                  <span>Mark Out for Delivery & Save</span>
+                </button>
+              </div>
+            </form>
+
           </div>
         </div>
       )}
