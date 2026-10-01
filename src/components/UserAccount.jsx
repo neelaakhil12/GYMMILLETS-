@@ -83,6 +83,15 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
       return;
     }
 
+    const currentOrigin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : 'https://www.tenigymillets.com';
+    const isLocal = typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const websiteUrl = isLocal ? 'https://www.tenigymillets.com' : currentOrigin;
+    const websiteDisplay = isLocal ? 'www.tenigymillets.com' : (window.location.host || 'www.tenigymillets.com');
+
+    const formattedDate = order.createdAt
+      ? new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
     const itemsHtml = order.items.map(item => `
       <tr>
         <td style="padding: 12px 10px; border-bottom: 1px solid #edf2f7; font-size: 13px;">
@@ -131,10 +140,14 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
               <div>
                 <div class="logo">🌾 GymMillets</div>
                 <p style="font-size: 12px; color: #718096; margin: 4px 0 0 0;">100% Premium Natural Millet Foods & Premixes</p>
+                <p style="font-size: 12px; color: #4b6b40; font-weight: 700; margin: 5px 0 0 0;">
+                  🌐 <a href="${websiteUrl}" target="_blank" style="color: #4b6b40; text-decoration: none;">${websiteDisplay}</a>
+                </p>
               </div>
               <div style="text-align: right;">
                 <h2 style="margin: 0; color: #4b6b40; font-family: 'Outfit', sans-serif; font-weight: 800;">INVOICE</h2>
                 <p style="font-size: 13px; font-weight: 600; color: #4b6b40; margin: 4px 0 0 0;">ID: ${order.id}</p>
+                <p style="font-size: 11px; color: #718096; margin: 3px 0 0 0;">Official Web Order: ${websiteDisplay}</p>
               </div>
             </div>
             <div class="details">
@@ -147,8 +160,9 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
               </div>
               <div style="text-align: right;">
                 <h4 style="margin: 0 0 8px 0; color: #a0aec0; text-transform: uppercase; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;">Invoice Details:</h4>
-                <p style="margin: 0;">Date: 17th May, 2026</p>
+                <p style="margin: 0;">Date: ${formattedDate}</p>
                 <p style="margin: 4px 0 0 0;">Payment Method: ${order.paymentDetails?.method || 'UPI/Card'}</p>
+                <p style="margin: 4px 0 0 0;">Website: <strong style="color: #4b6b40;">${websiteDisplay}</strong></p>
                 <p style="margin: 6px 0 0 0; font-weight: bold; color: #4b6b40; font-size: 14px;">Status: Paid</p>
               </div>
             </div>
@@ -189,8 +203,9 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
               </div>
             </div>
             <div class="footer">
-              <p style="font-weight: 600; color: #4b6b40;">Thank you for supporting natural organic diet systems!</p>
-              <p style="font-size: 10px; margin-top: 5px;">This is a system generated document. No physical signature is required.</p>
+              <p style="font-weight: 700; color: #4b6b40; font-size: 13px;">Thank you for choosing GymMillets!</p>
+              <p style="font-size: 12px; color: #4a5568; margin: 6px 0;">🌐 Website: <a href="${websiteUrl}" target="_blank" style="color: #4b6b40; font-weight: bold; text-decoration: underline;">${websiteDisplay}</a> • Email: support@gymmillets.com</p>
+              <p style="font-size: 10px; margin-top: 6px; color: #a0aec0;">This is an authentic computer-generated invoice from ${websiteDisplay}. No physical signature is required.</p>
             </div>
           </div>
           <script>

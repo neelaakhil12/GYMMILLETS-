@@ -349,7 +349,7 @@ export default function AdminPanel({
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(200, 230, 180);
-    doc.text('Pure Millet Foods • Healthy Living', 14, 19);
+    doc.text('Pure Millet Foods • Healthy Living • www.tenigymillets.com', 14, 19);
 
     // ─ Statement label (right)
     doc.setFont('helvetica', 'bold');
