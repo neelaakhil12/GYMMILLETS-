@@ -92,6 +92,35 @@ const CATEGORIES = [
   }
 ];
 
+// Helper to normalize and ensure pricing variants across product categories
+function upgradeProductVariants(productsList) {
+  if (!Array.isArray(productsList)) return [];
+  return productsList.map(p => {
+    if (p.variants && p.variants.length > 0 && typeof p.variants[0] === 'string') {
+      if (p.category === 'Ready Mix') {
+        return {
+          ...p,
+          variants: [
+            { label: "250 g", price: 130 },
+            { label: "500 g", price: 240 },
+            { label: "1 kg", price: 450 }
+          ]
+        };
+      } else if (p.category === 'Noodles' || p.category === 'Soups') {
+        return {
+          ...p,
+          variants: [
+            { label: "1 Packet", price: 80 },
+            { label: "2 Packets", price: 150 },
+            { label: "4 Packets", price: 280 }
+          ]
+        };
+      }
+    }
+    return p;
+  });
+}
+
 export default function App() {
   // --- STATE ---
   const [products, setProducts] = useState(PRODUCTS);
@@ -261,37 +290,29 @@ export default function App() {
     setDarkMode(localDark);
 
     // ── Load from Supabase (with safe fallback to static data) ──
-    // Products: if Supabase has data use it; otherwise keep static PRODUCTS
+    // 1. Categories: load directly from Supabase admin_config FIRST (single source of truth)
+    dbLoadCategories()
+      .then(cats => {
+        if (Array.isArray(cats) && cats.length > 0) {
+          setManagedCategories(cats);
+          try {
+            localStorage.setItem('managedCategories', JSON.stringify(cats));
+          } catch (e) {}
+        }
+      })
+      .catch(err => {
+        console.error('Error loading categories from Supabase:', err);
+      });
+
+    // 2. Products: load from Supabase with safe fallback to static PRODUCTS
     dbLoadProducts()
       .then(rows => {
         if (rows && rows.length > 0) {
-          const upgraded = rows.map(p => {
-            if (p.variants && p.variants.length > 0 && typeof p.variants[0] === 'string') {
-              if (p.category === 'Ready Mix') {
-                return {
-                  ...p,
-                  variants: [
-                    { label: "250 g", price: 130 },
-                    { label: "500 g", price: 240 },
-                    { label: "1 kg", price: 450 }
-                  ]
-                };
-              } else if (p.category === 'Noodles' || p.category === 'Soups') {
-                return {
-                  ...p,
-                  variants: [
-                    { label: "1 Packet", price: 80 },
-                    { label: "2 Packets", price: 150 },
-                    { label: "4 Packets", price: 280 }
-                  ]
-                };
-              }
-            }
-            return p;
-          });
+          const upgraded = upgradeProductVariants(rows);
           setProducts(upgraded);
           
-          // Dynamically detect any categories from database products that aren't in managedCategories
+          // Ensure any categories present in database products are accessible in the UI filter
+          // NOTE: We NEVER call dbSaveCategories here to avoid overwriting admin_config with stale client state
           setManagedCategories(prev => {
             const existingNames = new Set(prev.map(c => c.name.toLowerCase()));
             const toAdd = [];
@@ -304,12 +325,7 @@ export default function App() {
                 });
               }
             });
-            if (toAdd.length > 0) {
-              const combined = [...prev, ...toAdd];
-              dbSaveCategories(combined).catch(() => {});
-              return combined;
-            }
-            return prev;
+            return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
           });
         }
       })
@@ -326,7 +342,7 @@ export default function App() {
         console.error('Error loading orders from Supabase:', err);
       });
 
-    // Realtime subscriptions: instantly reflect orders and products changes from Supabase
+    // Realtime subscriptions: instantly reflect orders, products, and categories changes from Supabase
     const unsubOrders = subscribeToOrders(() => {
       dbLoadOrders().then(rows => {
         if (Array.isArray(rows)) setOrders(rows);
@@ -335,7 +351,10 @@ export default function App() {
 
     const unsubProducts = subscribeToProducts(() => {
       dbLoadProducts().then(rows => {
-        if (Array.isArray(rows) && rows.length > 0) setProducts(rows);
+        if (Array.isArray(rows) && rows.length > 0) {
+          const upgraded = upgradeProductVariants(rows);
+          setProducts(upgraded);
+        }
       }).catch(() => {});
     });
 
@@ -349,15 +368,6 @@ export default function App() {
       .then(settings => {
         if (settings) {
           setStoreSettings(settings);
-        }
-      })
-      .catch(() => {});
-
-    // Categories: load directly from Supabase admin_config
-    dbLoadCategories()
-      .then(cats => {
-        if (cats && cats.length > 0) {
-          setManagedCategories(cats);
         }
       })
       .catch(() => {});
@@ -379,8 +389,14 @@ export default function App() {
         const parsed = JSON.parse(record.value);
         if (record.key === 'managed_categories' && Array.isArray(parsed)) {
           setManagedCategories(parsed);
+          try {
+            localStorage.setItem('managedCategories', JSON.stringify(parsed));
+          } catch (e) {}
         } else if (record.key === 'hero_slides' && Array.isArray(parsed)) {
           setHeroSlides(parsed);
+          try {
+            localStorage.setItem('heroSlides', JSON.stringify(parsed));
+          } catch (e) {}
         } else if (record.key === 'store_settings' && typeof parsed === 'object') {
           setStoreSettings(parsed);
         }
@@ -420,9 +436,13 @@ export default function App() {
   const handleUpdateCategories = async (newCategories) => {
     setManagedCategories(newCategories);
     try {
+      localStorage.setItem('managedCategories', JSON.stringify(newCategories));
+    } catch (e) {}
+    try {
       await dbSaveCategories(newCategories);
     } catch (err) {
       console.error('Failed to save categories to Supabase:', err);
+      addToast('Failed to save categories to cloud database: ' + (err.message || 'Error'), 'warning');
     }
   };
 

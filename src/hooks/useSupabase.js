@@ -8,7 +8,7 @@ export async function dbLoadProducts() {
   const { data, error } = await supabase
     .from('products')
     .select('*')
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: false });
   if (error) throw error;
   // Map DB row → app shape
   return (data || []).map(rowToProduct);
@@ -295,23 +295,28 @@ function rowToProduct(row) {
     rating: row.rating || 4.8,
     reviewsCount: row.reviews_count || 0,
     variants: row.variants || [],
-    nutrition: row.nutrition || { protein: '10g', fiber: '6g', carbs: '60g', fat: '1g' }
+    nutrition: row.nutrition || { protein: '10g', fiber: '6g', carbs: '60g', fat: '1g' },
+    createdAt: row.created_at
   };
 }
 
 function productToRow(p) {
+  const priceNum = Number(p.price);
+  const ratingNum = Number(p.rating);
+  const revCount = Number(p.reviewsCount ?? p.reviews_count);
+
   return {
     id: p.id,
     name: p.name,
     category: p.category,
-    price: p.price,
-    quantity: p.quantity,
+    price: !isNaN(priceNum) ? priceNum : 0,
+    quantity: p.quantity || '1 unit',
     badge: p.badge || '',
     description: p.description || '',
-    image: p.image,
-    rating: p.rating || 4.8,
-    reviews_count: p.reviewsCount || 0,
-    variants: p.variants || [],
+    image: p.image || '/cat-ready-mix.png',
+    rating: !isNaN(ratingNum) ? ratingNum : 4.8,
+    reviews_count: !isNaN(revCount) ? revCount : 0,
+    variants: Array.isArray(p.variants) ? p.variants : [],
     nutrition: p.nutrition || { protein: '10g', fiber: '6g', carbs: '60g', fat: '1g' }
   };
 }

@@ -811,21 +811,49 @@ export default function AdminPanel({
     if (editingProduct) {
       setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, ...data } : p));
       onAddToast('Product updated!', 'success');
-      if (onDbUpdateProduct) onDbUpdateProduct(editingProduct.id, data).catch(() => {});
+      if (onDbUpdateProduct) {
+        try {
+          await onDbUpdateProduct(editingProduct.id, data);
+        } catch (err) {
+          console.error('Failed to update product in database:', err);
+          onAddToast('Database update failed: ' + (err.message || 'Error'), 'warning');
+        }
+      }
     } else {
       const newP = { id: `p-${Date.now()}`, ...data };
       setProducts(prev => [newP, ...prev]);
       onAddToast('Product added to catalog!', 'success');
-      if (onDbAddProduct) onDbAddProduct(newP).catch(() => {});
+      if (onDbAddProduct) {
+        try {
+          const savedRow = await onDbAddProduct(newP);
+          if (savedRow && savedRow.id) {
+            setProducts(prev => prev.map(p => p.id === newP.id ? savedRow : p));
+          }
+        } catch (err) {
+          console.error('Failed to add product to database:', err);
+          onAddToast('Database save failed: ' + (err.message || 'Error'), 'warning');
+          // Rollback local state if database rejected the insert
+          setProducts(prev => prev.filter(p => p.id !== newP.id));
+        }
+      }
     }
     resetProductModal();
   };
 
-  const handleDeleteProduct = (id) => {
+  const handleDeleteProduct = async (id) => {
+    const backup = [...products];
     setProducts(prev => prev.filter(p => p.id !== id));
     setDeleteConfirm(null);
     onAddToast('Product removed from catalog.', 'warning');
-    if (onDbDeleteProduct) onDbDeleteProduct(id).catch(() => {});
+    if (onDbDeleteProduct) {
+      try {
+        await onDbDeleteProduct(id);
+      } catch (err) {
+        console.error('Failed to delete product from database:', err);
+        onAddToast('Failed to delete from database.', 'warning');
+        setProducts(backup);
+      }
+    }
   };
 
   const handleImageUpload = async (e) => {
@@ -845,9 +873,10 @@ export default function AdminPanel({
     }
   };
 
-  const saveInlineEdit = (productId) => {
+  const saveInlineEdit = async (productId) => {
     const edit = inlineEdit[productId];
     if (!edit) return;
+    let updatedProduct = null;
     setProducts(prev => prev.map(p => {
       if (p.id !== productId) return p;
       const updated = {
@@ -855,11 +884,19 @@ export default function AdminPanel({
         ...(edit.price    !== undefined ? { price:    parseInt(edit.price)    || p.price }    : {}),
         ...(edit.quantity !== undefined ? { quantity: edit.quantity || p.quantity } : {}),
       };
-      if (onDbUpdateProduct) onDbUpdateProduct(productId, updated).catch(() => {});
+      updatedProduct = updated;
       return updated;
     }));
     setInlineEdit(prev => { const n = { ...prev }; delete n[productId]; return n; });
     onAddToast('Product updated!', 'success');
+    if (onDbUpdateProduct && updatedProduct) {
+      try {
+        await onDbUpdateProduct(productId, updatedProduct);
+      } catch (err) {
+        console.error('Failed to update inline edit in database:', err);
+        onAddToast('Database update failed.', 'warning');
+      }
+    }
   };
 
   // ── Category Handlers ──────────────────────────────────────────────────────
