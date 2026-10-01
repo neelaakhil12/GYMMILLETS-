@@ -12,7 +12,7 @@ export default function CartModal({
   onCheckout,
   appliedCoupon,
   setAppliedCoupon,
-  storeSettings = { deliveryFee: 40, freeDeliveryThreshold: 500, gstPercentage: 5 }
+  storeSettings = { deliveryFee: 40, gstPercentage: 5 }
 }) {
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
@@ -23,7 +23,6 @@ export default function CartModal({
   const subtotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
 
   const deliveryFee = Number(storeSettings?.deliveryFee ?? 40);
-  const freeThreshold = Number(storeSettings?.freeDeliveryThreshold ?? 500);
   const gstPct = Number(storeSettings?.gstPercentage ?? 5);
 
   // Apply Coupon Logic
@@ -56,7 +55,7 @@ export default function CartModal({
   };
 
   const discountAmount = appliedCoupon ? (subtotal * appliedCoupon.discount) / 100 : 0;
-  const shippingFee = (freeThreshold > 0 && subtotal >= freeThreshold) || subtotal === 0 ? 0 : deliveryFee;
+  const shippingFee = subtotal === 0 ? 0 : deliveryFee;
   const taxAmount = Math.round(subtotal * (gstPct / 100));
   const grandTotal = subtotal - discountAmount + shippingFee + taxAmount;
 
@@ -236,11 +235,6 @@ export default function CartModal({
                     <span>₹{shippingFee}</span>
                   )}
                 </div>
-                {shippingFee > 0 && freeThreshold > 0 && subtotal < freeThreshold && (
-                  <p className="text-[9px] text-highlight font-medium">
-                    Add ₹{freeThreshold - subtotal} more to unlock <strong>FREE DELIVERY!</strong>
-                  </p>
-                )}
                 <div className="flex justify-between text-base font-outfit font-black text-textDark dark:text-cream border-t border-accent/10 pt-2.5 mt-1.5">
                   <span>Total Amount</span>
                   <span>₹{grandTotal}</span>

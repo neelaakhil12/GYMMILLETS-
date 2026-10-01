@@ -93,12 +93,12 @@ export default function CheckoutView({
   };
 
   const deliveryFee = storeSettings?.deliveryFee !== undefined ? Number(storeSettings.deliveryFee) : 40;
-  const freeThreshold = storeSettings?.freeDeliveryThreshold !== undefined ? Number(storeSettings.freeDeliveryThreshold) : 500;
   const gstPercentage = storeSettings?.gstPercentage !== undefined ? Number(storeSettings.gstPercentage) : 5;
+  const enableCod = storeSettings?.enableCod !== undefined ? Boolean(storeSettings.enableCod) : true;
 
   const subtotal = cartItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
   const discountAmount = appliedCoupon ? (subtotal * appliedCoupon.discount) / 100 : 0;
-  const shippingFee = (freeThreshold > 0 && subtotal >= freeThreshold) || subtotal === 0 ? 0 : deliveryFee;
+  const shippingFee = subtotal === 0 ? 0 : deliveryFee;
   const taxAmount = Math.round((subtotal * gstPercentage) / 100);
   const grandTotal = subtotal - discountAmount + shippingFee + taxAmount;
 
@@ -146,7 +146,11 @@ export default function CheckoutView({
     }
   };
 
-  const handlePlaceOrderSubmit = async () => {
+  const handlePlaceOrderSubmit = async (selectedMethod) => {
+    const methodToUse = selectedMethod || formData.paymentMethod || (enableCod ? 'cod' : 'online');
+    if (selectedMethod && selectedMethod !== formData.paymentMethod) {
+      setFormData(prev => ({ ...prev, paymentMethod: selectedMethod }));
+    }
     const finalEmail = (formData.email || currentUser?.email || 'guest@gymmillets.com').toLowerCase().trim();
     const orderDetails = {
       items: cartItems.map(item => ({
@@ -169,7 +173,7 @@ export default function CheckoutView({
         locationUrl: formData.locationUrl
       },
       paymentDetails: {
-        method: formData.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Razorpay Online',
+        method: methodToUse === 'cod' ? 'Cash on Delivery' : 'Razorpay Online',
         userEmail: finalEmail
       },
       userEmail: finalEmail,
@@ -180,7 +184,7 @@ export default function CheckoutView({
       total: grandTotal
     };
 
-    if (formData.paymentMethod === 'cod') {
+    if (methodToUse === 'cod') {
       onPlaceOrder(orderDetails);
       return;
     }
@@ -446,50 +450,58 @@ export default function CheckoutView({
                 <div className="border-b border-accent/10 pb-4">
                   <h2 className="text-xl font-outfit font-black text-textDark dark:text-cream flex items-center gap-2">
                     <CreditCard className="text-primary dark:text-success-light" size={20} />
-                    <span>Select Payment Option</span>
+                    <span>Choose Payment Option</span>
                   </h2>
-                  <p className="text-xs text-textLight dark:text-cream/50 mt-1">Select from Cash on Delivery, Credit/Debit Card or immediate UPI.</p>
+                  <p className="text-xs text-textLight dark:text-cream/50 mt-1">Select your preferred payment method below to complete your order.</p>
                 </div>
 
-                {/* Option Toggles */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <button
-                    onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'cod' }))}
-                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${
-                      formData.paymentMethod === 'cod'
-                        ? 'border-primary bg-primary/5 text-primary dark:border-success-light dark:text-success-light'
-                        : 'border-accent/20 bg-transparent text-textDark dark:text-cream hover:bg-primary/5'
-                    }`}
-                  >
-                    <Truck size={24} className="mb-2" />
-                    <span className="text-xs font-bold">Cash on Delivery</span>
-                    <span className="text-[9px] text-textLight dark:text-cream/50 mt-0.5">Pay at door</span>
-                  </button>
+                {/* Payment Buttons: COD (if enabled) & Pay Online */}
+                <div className={`grid gap-4 ${enableCod ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 max-w-md mx-auto'}`}>
+                  {/* Button 1: Cash on Delivery (only displayed if enableCod is true) */}
+                  {enableCod && (
+                    <button
+                      type="button"
+                      disabled={isProcessing}
+                      onClick={() => handlePlaceOrderSubmit('cod')}
+                      className="flex flex-col items-center justify-between p-6 rounded-3xl border-2 border-primary/25 hover:border-primary bg-primary/5 hover:bg-primary/10 dark:bg-darkCard dark:hover:bg-primary/15 transition-all text-center group shadow-sm hover:shadow-premium scale-100 active:scale-95 disabled:opacity-50"
+                    >
+                      <div className="w-16 h-16 rounded-2xl bg-primary/15 text-primary dark:bg-success/20 dark:text-success-light flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <Truck size={30} />
+                      </div>
+                      <div>
+                        <span className="font-outfit font-black text-lg text-textDark dark:text-cream block">Cash on Delivery</span>
+                        <span className="text-xs text-textLight dark:text-cream/60 mt-1 block">Pay in cash or UPI at your doorstep</span>
+                      </div>
+                      <div className="w-full mt-6 py-3.5 rounded-full bg-primary hover:bg-primary-dark text-cream font-bold text-xs shadow-premium flex items-center justify-center gap-2 transition-colors">
+                        <Truck size={15} />
+                        <span>Order with COD (₹{grandTotal})</span>
+                      </div>
+                    </button>
+                  )}
 
+                  {/* Button 2: Pay Online */}
                   <button
-                    onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'card' }))}
-                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${
-                      formData.paymentMethod === 'card'
-                        ? 'border-primary bg-primary/5 text-primary dark:border-success-light dark:text-success-light'
-                        : 'border-accent/20 bg-transparent text-textDark dark:text-cream hover:bg-primary/5'
-                    }`}
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={() => handlePlaceOrderSubmit('online')}
+                    className="flex flex-col items-center justify-between p-6 rounded-3xl border-2 border-secondary/35 hover:border-secondary bg-gradient-to-b from-secondary/5 to-transparent hover:from-secondary/15 dark:bg-darkCard transition-all text-center group shadow-sm hover:shadow-premium scale-100 active:scale-95 disabled:opacity-50"
                   >
-                    <CreditCard size={24} className="mb-2" />
-                    <span className="text-xs font-bold">Credit/Debit Card</span>
-                    <span className="text-[9px] text-textLight dark:text-cream/50 mt-0.5">Visa / Mastercard</span>
-                  </button>
-
-                  <button
-                    onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'upi' }))}
-                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${
-                      formData.paymentMethod === 'upi'
-                        ? 'border-primary bg-primary/5 text-primary dark:border-success-light dark:text-success-light'
-                        : 'border-accent/20 bg-transparent text-textDark dark:text-cream hover:bg-primary/5'
-                    }`}
-                  >
-                    <span className="text-base font-black italic tracking-wide text-secondary mb-2 block dark:text-accent-light">UPI</span>
-                    <span className="text-xs font-bold">PhonePe / GPay / BHIM</span>
-                    <span className="text-[9px] text-textLight dark:text-cream/50 mt-0.5">Instant secure transfer</span>
+                    <div className="w-16 h-16 rounded-2xl bg-secondary/15 text-secondary dark:text-accent-light flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <CreditCard size={30} />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span className="font-outfit font-black text-lg text-textDark dark:text-cream">Pay Online</span>
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                          Instant
+                        </span>
+                      </div>
+                      <span className="text-xs text-textLight dark:text-cream/60 mt-1 block">UPI (GPay, PhonePe, Paytm), Cards, NetBanking</span>
+                    </div>
+                    <div className="w-full mt-6 py-3.5 rounded-full bg-secondary hover:bg-secondary-dark text-cream font-bold text-xs shadow-premium flex items-center justify-center gap-2 transition-colors">
+                      <CreditCard size={15} />
+                      <span>{isProcessing ? 'Opening Gateway...' : `Pay Online (₹${grandTotal})`}</span>
+                    </div>
                   </button>
                 </div>
 
@@ -499,21 +511,19 @@ export default function CheckoutView({
                   </div>
                 )}
 
-                <button
-                  onClick={formData.paymentMethod === 'cod' ? handleNextStep : handlePlaceOrderSubmit}
-                  disabled={isProcessing}
-                  className={`w-full text-cream font-bold py-3.5 rounded-full shadow-premium flex items-center justify-center gap-1 hover:shadow-premium-hover scale-100 active:scale-95 transition-all text-sm mt-6 ${
-                    isProcessing ? 'bg-gray-400 cursor-not-allowed opacity-75' : 'bg-primary hover:bg-primary-dark'
-                  }`}
-                >
-                  <span>
-                    {isProcessing
-                      ? 'PROCESSING PAYMENT...'
-                      : formData.paymentMethod === 'cod'
-                      ? 'Review Order Summary'
-                      : `Continue with Payment (₹${grandTotal})`}
-                  </span>
-                </button>
+                <div className="flex items-center justify-between pt-4 border-t border-accent/10">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="text-xs font-bold text-textLight dark:text-cream/50 hover:text-textDark dark:hover:text-cream hover:underline flex items-center gap-1"
+                  >
+                    ← Back to Delivery Address
+                  </button>
+                  <div className="flex items-center gap-1.5 text-[11px] text-success font-semibold">
+                    <ShieldCheck size={14} />
+                    <span>Safe & Secure 256-Bit SSL Encrypted</span>
+                  </div>
+                </div>
               </div>
             )}
 

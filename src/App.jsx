@@ -219,11 +219,11 @@ export default function App() {
   // Orders State — strictly read from and written to Supabase as single source of truth
   const [orders, setOrders] = useState([]);
 
-  // Store Checkout Settings (delivery fee, free delivery threshold, GST %) — from Supabase admin_config
+  // Store Checkout Settings (delivery fee, GST %, enableCod toggle) — from Supabase admin_config
   const [storeSettings, setStoreSettings] = useState({
     deliveryFee: 40,
-    freeDeliveryThreshold: 500,
     gstPercentage: 5,
+    enableCod: true,
   });
 
   const [activeOrder, setActiveOrder] = useState(() => {
@@ -1415,8 +1415,8 @@ export default function App() {
                       </div>
                       <div className="flex justify-between text-textLight dark:text-cream/60 font-medium">
                         <span>Shipping</span>
-                        <span className={(Number(storeSettings.freeDeliveryThreshold) > 0 && cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0) >= Number(storeSettings.freeDeliveryThreshold)) ? 'text-success font-bold' : ''}>
-                          {(Number(storeSettings.freeDeliveryThreshold) > 0 && cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0) >= Number(storeSettings.freeDeliveryThreshold)) ? 'Free' : `₹${storeSettings.deliveryFee}`}
+                        <span className={Number(storeSettings.deliveryFee) === 0 ? 'text-success font-bold' : ''}>
+                          {Number(storeSettings.deliveryFee) === 0 ? 'Free' : `₹${storeSettings.deliveryFee}`}
                         </span>
                       </div>
                       <div className="flex justify-between font-outfit font-black text-base text-textDark dark:text-cream border-t border-accent/10 pt-3 mt-1">
@@ -1425,8 +1425,7 @@ export default function App() {
                           (() => {
                             const sub = cartItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0);
                             const disc = appliedCoupon ? Math.round(sub * appliedCoupon.discount / 100) : 0;
-                            const threshold = Number(storeSettings.freeDeliveryThreshold);
-                            const ship = (threshold > 0 && sub >= threshold) || sub === 0 ? 0 : Number(storeSettings.deliveryFee);
+                            const ship = sub === 0 ? 0 : Number(storeSettings.deliveryFee);
                             const tax = Math.round(sub * (Number(storeSettings.gstPercentage) / 100));
                             return sub - disc + ship + tax;
                           })()

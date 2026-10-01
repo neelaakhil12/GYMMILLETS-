@@ -170,25 +170,25 @@ export async function dbGetStoreSettings() {
     .eq('key', 'store_settings')
     .single();
   if (error || !data?.value) {
-    return { deliveryFee: 40, freeDeliveryThreshold: 500, gstPercentage: 5 };
+    return { deliveryFee: 40, gstPercentage: 5, enableCod: true };
   }
   try {
     const parsed = JSON.parse(data.value);
     return {
       deliveryFee: typeof parsed.deliveryFee === 'number' ? parsed.deliveryFee : 40,
-      freeDeliveryThreshold: typeof parsed.freeDeliveryThreshold === 'number' ? parsed.freeDeliveryThreshold : 500,
       gstPercentage: typeof parsed.gstPercentage === 'number' ? parsed.gstPercentage : 5,
+      enableCod: parsed.enableCod !== undefined ? Boolean(parsed.enableCod) : true,
     };
   } catch {
-    return { deliveryFee: 40, freeDeliveryThreshold: 500, gstPercentage: 5 };
+    return { deliveryFee: 40, gstPercentage: 5, enableCod: true };
   }
 }
 
 export async function dbSaveStoreSettings(settings) {
   const payload = {
     deliveryFee: Number(settings.deliveryFee) || 0,
-    freeDeliveryThreshold: Number(settings.freeDeliveryThreshold) || 0,
     gstPercentage: Number(settings.gstPercentage) || 0,
+    enableCod: settings.enableCod !== undefined ? Boolean(settings.enableCod) : true,
   };
   const { error } = await supabase
     .from('admin_config')

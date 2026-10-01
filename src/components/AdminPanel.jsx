@@ -58,7 +58,7 @@ export default function AdminPanel({
   onDbAddCoupon, onDbDeleteCoupon,
   onRefreshOrders,
   onAdminLogout,
-  storeSettings = { deliveryFee: 40, freeDeliveryThreshold: 500, gstPercentage: 5 },
+  storeSettings = { deliveryFee: 40, gstPercentage: 5, enableCod: true },
   onSaveStoreSettings,
 }) {
   const [tab, setTab] = useState('dashboard');
@@ -66,8 +66,8 @@ export default function AdminPanel({
   // ── Store Checkout Settings state ──────────────────────────────────────────
   const [settingsForm, setSettingsForm] = useState({
     deliveryFee: storeSettings?.deliveryFee ?? 40,
-    freeDeliveryThreshold: storeSettings?.freeDeliveryThreshold ?? 500,
     gstPercentage: storeSettings?.gstPercentage ?? 5,
+    enableCod: storeSettings?.enableCod !== undefined ? Boolean(storeSettings.enableCod) : true,
   });
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
@@ -75,8 +75,8 @@ export default function AdminPanel({
     if (storeSettings) {
       setSettingsForm({
         deliveryFee: storeSettings.deliveryFee ?? 40,
-        freeDeliveryThreshold: storeSettings.freeDeliveryThreshold ?? 500,
         gstPercentage: storeSettings.gstPercentage ?? 5,
+        enableCod: storeSettings.enableCod !== undefined ? Boolean(storeSettings.enableCod) : true,
       });
     }
   }, [storeSettings]);
@@ -87,13 +87,13 @@ export default function AdminPanel({
     try {
       const payload = {
         deliveryFee: Math.max(0, Number(settingsForm.deliveryFee) || 0),
-        freeDeliveryThreshold: Math.max(0, Number(settingsForm.freeDeliveryThreshold) || 0),
         gstPercentage: Math.max(0, Number(settingsForm.gstPercentage) || 0),
+        enableCod: Boolean(settingsForm.enableCod),
       };
       if (onSaveStoreSettings) {
         await onSaveStoreSettings(payload);
       }
-      onAddToast('Checkout delivery fee & GST percentage updated successfully!', 'success');
+      onAddToast('Store settings (Delivery Fee, GST & COD option) saved to Supabase!', 'success');
     } catch (err) {
       console.error(err);
       onAddToast('Failed to save store settings.', 'error');
@@ -1805,7 +1805,7 @@ export default function AdminPanel({
                 </div>
 
                 <form onSubmit={handleSaveSettings} className="space-y-6 mt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Standard Delivery Fee */}
                     <div className="bg-cream/20 dark:bg-[#202020] p-5 rounded-2xl border border-accent/15 space-y-3">
                       <div className="flex items-center justify-between">
@@ -1832,37 +1832,7 @@ export default function AdminPanel({
                         />
                       </div>
                       <p className="text-[11px] text-textLight dark:text-cream/50 leading-relaxed">
-                        Base delivery charge applied to orders that do not qualify for free delivery.
-                      </p>
-                    </div>
-
-                    {/* Free Delivery Threshold */}
-                    <div className="bg-cream/20 dark:bg-[#202020] p-5 rounded-2xl border border-accent/15 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <label className="block text-xs font-extrabold uppercase tracking-wider text-textDark dark:text-cream">
-                          Free Delivery Above
-                        </label>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-success/15 text-success">
-                          Threshold
-                        </span>
-                      </div>
-                      <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-textLight dark:text-cream/40">
-                          ₹
-                        </span>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1"
-                          required
-                          value={settingsForm.freeDeliveryThreshold}
-                          onChange={(e) => setSettingsForm(prev => ({ ...prev, freeDeliveryThreshold: e.target.value }))}
-                          className={`${inputCls} pl-8 w-full text-base font-bold`}
-                          placeholder="500"
-                        />
-                      </div>
-                      <p className="text-[11px] text-textLight dark:text-cream/50 leading-relaxed">
-                        Orders with subtotal equal to or exceeding this qualify for 100% Free Shipping.
+                        Delivery charge applied on the checkout page (set to 0 for free delivery).
                       </p>
                     </div>
 
@@ -1896,6 +1866,55 @@ export default function AdminPanel({
                         Goods & Services Tax added to subtotal at checkout & on invoices (e.g. 5%).
                       </p>
                     </div>
+
+                    {/* COD Option Toggle */}
+                    <div className="col-span-full bg-cream/20 dark:bg-[#202020] p-5 rounded-2xl border border-accent/15 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-start sm:items-center gap-3.5">
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-colors ${
+                          settingsForm.enableCod
+                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                            : 'bg-accent/20 text-textLight/60 dark:text-cream/30'
+                        }`}>
+                          <Truck size={22} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-outfit font-black text-base text-textDark dark:text-cream">
+                              Cash on Delivery (COD) Option
+                            </span>
+                            <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                              settingsForm.enableCod
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-red-500/15 text-red-500'
+                            }`}>
+                              {settingsForm.enableCod ? 'Displayed on Checkout' : 'Hidden from Checkout'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-textLight dark:text-cream/50 mt-0.5">
+                            Turn OFF to immediately hide the Cash on Delivery button from checkout, requiring customers to pay online only.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Interactive Switch */}
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={settingsForm.enableCod}
+                        onClick={() => setSettingsForm(prev => ({ ...prev, enableCod: !prev.enableCod }))}
+                        className={`w-14 h-8 flex items-center rounded-full p-1 cursor-pointer transition-colors shrink-0 self-start sm:self-auto ${
+                          settingsForm.enableCod
+                            ? 'bg-primary dark:bg-success'
+                            : 'bg-accent/30 dark:bg-white/10'
+                        }`}
+                      >
+                        <div
+                          className={`bg-white w-6 h-6 rounded-full shadow-md transform transition-transform ${
+                            settingsForm.enableCod ? 'translate-x-6' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Live Simulation Preview */}
@@ -1909,66 +1928,34 @@ export default function AdminPanel({
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                      {/* Scenario 1: Standard Order (Below threshold) */}
-                      <div className="bg-white dark:bg-darkCard p-4 rounded-xl border border-accent/10 space-y-2 text-xs">
-                        <div className="flex justify-between items-center pb-1 border-b border-accent/10">
-                          <span className="font-bold text-textDark dark:text-cream">Scenario A: ₹300 Order</span>
-                          <span className="text-[10px] text-highlight font-semibold">Standard Shipping</span>
-                        </div>
-                        <div className="flex justify-between text-textLight dark:text-cream/60">
-                          <span>Items Subtotal:</span>
-                          <span>₹300</span>
-                        </div>
-                        <div className="flex justify-between text-textLight dark:text-cream/60">
-                          <span>GST ({settingsForm.gstPercentage}%):</span>
-                          <span>₹{Math.round(300 * (Number(settingsForm.gstPercentage || 0) / 100))}</span>
-                        </div>
-                        <div className="flex justify-between text-textLight dark:text-cream/60">
-                          <span>Delivery Fee:</span>
-                          <span>₹{300 >= Number(settingsForm.freeDeliveryThreshold || 0) && Number(settingsForm.freeDeliveryThreshold) > 0 ? 0 : Number(settingsForm.deliveryFee || 0)}</span>
-                        </div>
-                        <div className="flex justify-between font-bold text-textDark dark:text-cream pt-1 border-t border-accent/10">
-                          <span>Estimated Total:</span>
-                          <span>₹{300 + Math.round(300 * (Number(settingsForm.gstPercentage || 0) / 100)) + (300 >= Number(settingsForm.freeDeliveryThreshold || 0) && Number(settingsForm.freeDeliveryThreshold) > 0 ? 0 : Number(settingsForm.deliveryFee || 0))}</span>
-                        </div>
+                    <div className="bg-white dark:bg-darkCard p-4 rounded-xl border border-accent/10 space-y-2 text-xs max-w-md">
+                      <div className="flex justify-between items-center pb-1 border-b border-accent/10">
+                        <span className="font-bold text-textDark dark:text-cream">Sample Order (₹500 Items)</span>
+                        <span className="text-[10px] text-primary dark:text-success-light font-semibold">Live Preview</span>
                       </div>
-
-                      {/* Scenario 2: Eligible for Free Delivery */}
-                      <div className="bg-white dark:bg-darkCard p-4 rounded-xl border border-accent/10 space-y-2 text-xs">
-                        <div className="flex justify-between items-center pb-1 border-b border-accent/10">
-                          <span className="font-bold text-textDark dark:text-cream">
-                            Scenario B: ₹{Math.max(600, Number(settingsForm.freeDeliveryThreshold || 500))} Order
-                          </span>
-                          <span className="text-[10px] text-success font-semibold">Free Delivery</span>
-                        </div>
-                        {(() => {
-                          const sub = Math.max(600, Number(settingsForm.freeDeliveryThreshold || 500));
-                          const gst = Math.round(sub * (Number(settingsForm.gstPercentage || 0) / 100));
-                          const ship = sub >= Number(settingsForm.freeDeliveryThreshold || 0) && Number(settingsForm.freeDeliveryThreshold) > 0 ? 0 : Number(settingsForm.deliveryFee || 0);
-                          return (
-                            <>
-                              <div className="flex justify-between text-textLight dark:text-cream/60">
-                                <span>Items Subtotal:</span>
-                                <span>₹{sub}</span>
-                              </div>
-                              <div className="flex justify-between text-textLight dark:text-cream/60">
-                                <span>GST ({settingsForm.gstPercentage}%):</span>
-                                <span>₹{gst}</span>
-                              </div>
-                              <div className="flex justify-between text-textLight dark:text-cream/60">
-                                <span>Delivery Fee:</span>
-                                <span className={ship === 0 ? "text-success font-bold" : ""}>
-                                  {ship === 0 ? "FREE" : `₹${ship}`}
-                                </span>
-                              </div>
-                              <div className="flex justify-between font-bold text-textDark dark:text-cream pt-1 border-t border-accent/10">
-                                <span>Estimated Total:</span>
-                                <span>₹{sub + gst + ship}</span>
-                              </div>
-                            </>
-                          );
-                        })()}
+                      <div className="flex justify-between text-textLight dark:text-cream/60">
+                        <span>Items Subtotal:</span>
+                        <span>₹500</span>
+                      </div>
+                      <div className="flex justify-between text-textLight dark:text-cream/60">
+                        <span>GST ({settingsForm.gstPercentage}%):</span>
+                        <span>₹{Math.round(500 * (Number(settingsForm.gstPercentage || 0) / 100))}</span>
+                      </div>
+                      <div className="flex justify-between text-textLight dark:text-cream/60">
+                        <span>Delivery Fee:</span>
+                        <span className={Number(settingsForm.deliveryFee || 0) === 0 ? "text-success font-bold" : ""}>
+                          {Number(settingsForm.deliveryFee || 0) === 0 ? "FREE" : `₹${settingsForm.deliveryFee || 0}`}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-textLight dark:text-cream/60">
+                        <span>COD Available:</span>
+                        <span className={settingsForm.enableCod ? "text-success font-bold" : "text-highlight font-bold"}>
+                          {settingsForm.enableCod ? "Yes (COD Active)" : "No (Online Only)"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between font-bold text-textDark dark:text-cream pt-1 border-t border-accent/10">
+                        <span>Grand Total:</span>
+                        <span>₹{500 + Math.round(500 * (Number(settingsForm.gstPercentage || 0) / 100)) + Number(settingsForm.deliveryFee || 0)}</span>
                       </div>
                     </div>
                   </div>
@@ -1977,10 +1964,10 @@ export default function AdminPanel({
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between pt-4 border-t border-accent/10 gap-3">
                     <button
                       type="button"
-                      onClick={() => setSettingsForm({ deliveryFee: 40, freeDeliveryThreshold: 500, gstPercentage: 5 })}
+                      onClick={() => setSettingsForm({ deliveryFee: 40, gstPercentage: 5, enableCod: true })}
                       className="px-4 py-2.5 rounded-xl border border-accent/20 text-xs font-bold text-textLight dark:text-cream/60 hover:text-textDark dark:hover:text-cream hover:bg-cream dark:hover:bg-white/5 transition-colors"
                     >
-                      Reset to Defaults (₹40, ₹500, 5%)
+                      Reset to Defaults (₹40, 5%, COD Enabled)
                     </button>
 
                     <button
