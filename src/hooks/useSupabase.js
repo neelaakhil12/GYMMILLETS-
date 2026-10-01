@@ -197,6 +197,87 @@ export async function dbSaveStoreSettings(settings) {
   return payload;
 }
 
+export async function dbLoadCategories() {
+  const { data, error } = await supabase
+    .from('admin_config')
+    .select('value')
+    .eq('key', 'managed_categories')
+    .single();
+  if (error || !data?.value) {
+    return [
+      { name: 'Ready Mix', image: '/cat-ready-mix.png' },
+      { name: 'Instant Mix', image: '/cat-instant-mix.png' },
+      { name: 'Freeze Dried Powders', image: '/cat-powders.png' },
+      { name: 'Noodles', image: '/cat-noodles.png' },
+      { name: 'Soups', image: '/cat-soups.png' },
+      { name: 'Hot Meal', image: '/cat-hot-meals.png' }
+    ];
+  }
+  try {
+    const parsed = JSON.parse(data.value);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function dbSaveCategories(categories) {
+  const { error } = await supabase
+    .from('admin_config')
+    .upsert({ key: 'managed_categories', value: JSON.stringify(categories) });
+  if (error) throw error;
+  return categories;
+}
+
+export async function dbLoadHeroSlides() {
+  const { data, error } = await supabase
+    .from('admin_config')
+    .select('value')
+    .eq('key', 'hero_slides')
+    .single();
+  if (error || !data?.value) {
+    return [
+      { name: "", image: "/millet-mix.png", alt: "Natural Multi Millet Mix" },
+      { name: "Sorghum (Jowar)", image: "/sorghum-jowar.png", alt: "Sorghum Jowar" },
+      { name: "Pearl Millet", image: "/pearl-millet.png", alt: "Pearl Millet" },
+      { name: "Finger Millet", image: "/finger-millet.png", alt: "Finger Millet" },
+      { name: "Foxtail Millet", image: "/foxtail-millet.png", alt: "Foxtail Millet" },
+      { name: "Little Millet", image: "/little-millet.png", alt: "Little Millet" }
+    ];
+  }
+  try {
+    const parsed = JSON.parse(data.value);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function dbSaveHeroSlides(slides) {
+  const { error } = await supabase
+    .from('admin_config')
+    .upsert({ key: 'hero_slides', value: JSON.stringify(slides) });
+  if (error) throw error;
+  return slides;
+}
+
+export function subscribeToAdminConfig(callback) {
+  const channel = supabase
+    .channel('realtime:admin_config')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'admin_config' },
+      payload => {
+        if (callback) callback(payload);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
 // ─────────────────────────────────────────────
 //  SHAPE CONVERTERS
 // ─────────────────────────────────────────────

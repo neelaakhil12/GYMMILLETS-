@@ -8,7 +8,8 @@ import {
   dbLoadProducts, dbAddProduct, dbUpdateProduct, dbDeleteProduct, subscribeToProducts,
   dbLoadOrders, dbSaveOrder, dbUpdateOrderStatus, dbUpdateOrderShippingDetails, subscribeToOrders,
   dbLoadCoupons, dbAddCoupon, dbDeleteCoupon,
-  dbGetStoreSettings, dbSaveStoreSettings
+  dbGetStoreSettings, dbSaveStoreSettings,
+  dbLoadCategories, dbSaveCategories, dbLoadHeroSlides, dbSaveHeroSlides, subscribeToAdminConfig
 } from './hooks/useSupabase';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -300,7 +301,12 @@ export default function App() {
                 });
               }
             });
-            return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+            if (toAdd.length > 0) {
+              const combined = [...prev, ...toAdd];
+              dbSaveCategories(combined).catch(() => {});
+              return combined;
+            }
+            return prev;
           });
         }
       })
@@ -344,9 +350,46 @@ export default function App() {
       })
       .catch(() => {});
 
+    // Categories: load directly from Supabase admin_config
+    dbLoadCategories()
+      .then(cats => {
+        if (cats && cats.length > 0) {
+          setManagedCategories(cats);
+        }
+      })
+      .catch(() => {});
+
+    // Hero Slides: load directly from Supabase admin_config
+    dbLoadHeroSlides()
+      .then(slides => {
+        if (slides && slides.length > 0) {
+          setHeroSlides(slides);
+        }
+      })
+      .catch(() => {});
+
+    // Realtime subscription for admin_config (syncs categories, hero slides & settings between localhost and live Vercel)
+    const unsubConfig = subscribeToAdminConfig((payload) => {
+      const record = payload?.new;
+      if (!record || !record.key || !record.value) return;
+      try {
+        const parsed = JSON.parse(record.value);
+        if (record.key === 'managed_categories' && Array.isArray(parsed)) {
+          setManagedCategories(parsed);
+        } else if (record.key === 'hero_slides' && Array.isArray(parsed)) {
+          setHeroSlides(parsed);
+        } else if (record.key === 'store_settings' && typeof parsed === 'object') {
+          setStoreSettings(parsed);
+        }
+      } catch (err) {
+        console.error('Error handling realtime admin_config:', err);
+      }
+    });
+
     return () => {
       if (unsubOrders) unsubOrders();
       if (unsubProducts) unsubProducts();
+      if (unsubConfig) unsubConfig();
     };
   }, []);
 
@@ -368,6 +411,26 @@ export default function App() {
   const handleSaveStoreSettings = async (newSettings) => {
     await dbSaveStoreSettings(newSettings);
     setStoreSettings(newSettings);
+  };
+
+  // Categories handler — strictly saves to Supabase as single source of truth
+  const handleUpdateCategories = async (newCategories) => {
+    setManagedCategories(newCategories);
+    try {
+      await dbSaveCategories(newCategories);
+    } catch (err) {
+      console.error('Failed to save categories to Supabase:', err);
+    }
+  };
+
+  // Hero Slides handler — strictly saves to Supabase as single source of truth
+  const handleUpdateHeroSlides = async (newSlides) => {
+    setHeroSlides(newSlides);
+    try {
+      await dbSaveHeroSlides(newSlides);
+    } catch (err) {
+      console.error('Failed to save hero slides to Supabase:', err);
+    }
   };
 
 
@@ -1406,11 +1469,11 @@ export default function App() {
               activeOrder={activeOrder}
               setActiveOrder={setActiveOrder}
               categories={managedCategories}
-              onUpdateCategories={setManagedCategories}
+              onUpdateCategories={handleUpdateCategories}
               dbCoupons={dbCoupons}
               setDbCoupons={setDbCoupons}
               heroSlides={heroSlides}
-              onUpdateHeroSlides={setHeroSlides}
+              onUpdateHeroSlides={handleUpdateHeroSlides}
               onAddToast={addToast}
               onDbAddProduct={dbAddProduct}
               onDbUpdateProduct={dbUpdateProduct}
