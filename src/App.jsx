@@ -215,20 +215,56 @@ export default function App() {
   const [otpSent, setOtpSent] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
 
-  // Mock Active Orders
-  const [orders, setOrders] = useState([
-    {
-      id: "GM-9921",
-      items: [
-        { id: "rm-kichdi", name: "Kichdi Premix", variant: "Pearl Millet", price: 240, quantity: 1, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?q=80&w=600&auto=format&fit=crop" }
-      ],
-      shippingDetails: { name: "Coach Akhil", mobile: "9876543210", address: "Fit House Gym, MG Road", city: "Bangalore", pincode: "560001" },
-      paymentDetails: { method: "Card Paid" },
-      total: 292,
-      status: "Delivered"
-    }
-  ]);
-  const [activeOrder, setActiveOrder] = useState(null);
+  // Active Orders (persisted in localStorage + synced with Supabase)
+  const [orders, setOrders] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gymmillets_orders');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [
+      {
+        id: "GM-9921",
+        items: [
+          { id: "rm-kichdi", name: "Kichdi Premix", variant: "Pearl Millet", price: 240, quantity: 1, image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?q=80&w=600&auto=format&fit=crop" }
+        ],
+        shippingDetails: { name: "Coach Akhil", mobile: "9876543210", address: "Fit House Gym, MG Road", city: "Bangalore", pincode: "560001", userEmail: "akhil@gymmillets.com" },
+        paymentDetails: { method: "Card Paid" },
+        total: 292,
+        status: "Delivered",
+        userEmail: "akhil@gymmillets.com",
+        createdAt: "2026-05-17T10:30:00.000Z"
+      }
+    ];
+  });
+
+  const [activeOrder, setActiveOrder] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gymmillets_active_order');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return null;
+  });
+
+  useEffect(() => {
+    try {
+      if (Array.isArray(orders) && orders.length > 0) {
+        localStorage.setItem('gymmillets_orders', JSON.stringify(orders));
+      }
+    } catch (e) {}
+  }, [orders]);
+
+  useEffect(() => {
+    try {
+      if (activeOrder) {
+        localStorage.setItem('gymmillets_active_order', JSON.stringify(activeOrder));
+      } else {
+        localStorage.removeItem('gymmillets_active_order');
+      }
+    } catch (e) {}
+  }, [activeOrder]);
 
   // --- INITIALIZATION ---
   useEffect(() => {
@@ -293,10 +329,36 @@ export default function App() {
       })
       .catch(() => { /* Supabase unavailable — static PRODUCTS already in state */ });
 
-    // Orders: merge Supabase orders on top of mock seed order
+    // Orders: merge Supabase orders with local orders without wiping local orders
     dbLoadOrders()
-      .then(rows => { if (rows && rows.length > 0) setOrders(rows); })
-      .catch(() => { /* keep in-memory mock orders */ });
+      .then(rows => {
+        if (rows && rows.length > 0) {
+          setOrders(prev => {
+            const map = new Map();
+            // Start with current local orders
+            prev.forEach(o => { if (o && o.id) map.set(o.id, o); });
+            // Merge with remote orders
+            rows.forEach(r => {
+              if (r && r.id) {
+                const existing = map.get(r.id);
+                map.set(r.id, {
+                  ...r,
+                  userEmail: r.userEmail || existing?.userEmail || existing?.shippingDetails?.userEmail || '',
+                  shippingDetails: {
+                    ...(existing?.shippingDetails || {}),
+                    ...(r.shippingDetails || {}),
+                    userEmail: r.shippingDetails?.userEmail || existing?.shippingDetails?.userEmail || existing?.userEmail || ''
+                  }
+                });
+              }
+            });
+            const merged = Array.from(map.values());
+            try { localStorage.setItem('gymmillets_orders', JSON.stringify(merged)); } catch (e) {}
+            return merged;
+          });
+        }
+      })
+      .catch(() => { /* keep in-memory / localStorage orders */ });
 
     // Coupons: if Supabase has coupons use them; otherwise keep static COUPONS
     dbLoadCoupons()
@@ -574,15 +636,36 @@ export default function App() {
 
   // Place Order handler — saves to Supabase then updates local state
   const handlePlaceOrder = (orderDetails) => {
+    const userEmail = currentUser?.email || orderDetails.shippingDetails?.userEmail || 'guest@gymmillets.com';
     const finalOrder = {
       ...orderDetails,
       id: `GM-${Math.floor(1000 + Math.random() * 9000)}`,
       status: 'Placed',
-      userEmail: currentUser?.email || 'guest@gymmillets.com'
+      userEmail: userEmail,
+      shippingDetails: {
+        ...(orderDetails.shippingDetails || {}),
+        userEmail: userEmail
+      },
+      createdAt: new Date().toISOString()
     };
 
-    // Optimistically update UI first (never blocks the user)
-    setOrders(prev => [finalOrder, ...prev]);
+    // If currentUser doesn't have mobile set yet, update it from checkout formData so user account immediately links orders!
+    if (currentUser && orderDetails.shippingDetails?.mobile && !currentUser.mobile) {
+      const updatedUser = {
+        ...currentUser,
+        mobile: orderDetails.shippingDetails.mobile,
+        name: currentUser.name || orderDetails.shippingDetails.name
+      };
+      setCurrentUser(updatedUser);
+      try { localStorage.setItem('currentUser', JSON.stringify(updatedUser)); } catch (e) {}
+    }
+
+    // Optimistically update UI first and persist to localStorage
+    setOrders(prev => {
+      const updated = [finalOrder, ...prev.filter(o => o.id !== finalOrder.id)];
+      try { localStorage.setItem('gymmillets_orders', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
     setActiveOrder(finalOrder);
     setCartItems([]);
     setAppliedCoupon(null);

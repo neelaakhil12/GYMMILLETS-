@@ -9,10 +9,31 @@ export default function UserAccount({ currentUser, setCurrentUser, orders, setAc
     mobile: currentUser?.mobile || ''
   });
 
+  // Helper to extract last 10 digits of any phone number (strips country code +91, leading 0, dashes, spaces)
+  const cleanPhone = (p) => String(p || '').replace(/\D/g, '').slice(-10);
+  const userMobile = cleanPhone(currentUser?.mobile);
+  const userEmail = (currentUser?.email || '').toLowerCase().trim();
+  const userName = (currentUser?.name || '').toLowerCase().trim();
+
   // Filter orders related to this logged-in user
-  const userOrders = orders.filter(
-    order => order.userEmail === currentUser?.email || order.shippingDetails?.mobile === currentUser?.mobile
-  );
+  const userOrders = orders.filter(order => {
+    // 1. Direct match by userEmail
+    const orderEmail = (order.userEmail || order.shippingDetails?.userEmail || order.shippingDetails?.email || '').toLowerCase().trim();
+    if (userEmail && orderEmail && userEmail === orderEmail) return true;
+
+    // 2. Normalized phone number match (e.g. 09989551305 matches +91 9989551305 and 9989551305)
+    const orderMobile = cleanPhone(order.shippingDetails?.mobile || order.shippingDetails?.alternateMobile || order.shippingDetails?.phone);
+    if (userMobile && orderMobile && userMobile === orderMobile) return true;
+
+    // 3. Name match if name is provided (e.g. "NEELA AKHIL KUMAR")
+    const orderName = (order.shippingDetails?.name || '').toLowerCase().trim();
+    if (userName && orderName && (userName === orderName || userName.includes(orderName) || orderName.includes(userName))) return true;
+
+    // 4. Session guest match if placed with same customer name
+    if (order.userEmail === 'guest@gymmillets.com' && userName && orderName) return true;
+
+    return false;
+  });
 
   const handleProfileSave = (e) => {
     e.preventDefault();

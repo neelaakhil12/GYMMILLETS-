@@ -146,33 +146,44 @@ function productToRow(p) {
 }
 
 function rowToOrder(row) {
+  const shipping = row.shipping_details || {};
+  const payment = row.payment_details || {};
   return {
     id: row.id,
     items: row.items || [],
-    shippingDetails: row.shipping_details || {},
-    paymentDetails: row.payment_details || {},
+    shippingDetails: shipping,
+    paymentDetails: payment,
     subtotal: row.subtotal || 0,
     discount: row.discount || 0,
     tax: row.tax || 0,
     shipping: row.shipping || 0,
     total: row.total || 0,
     status: row.status || 'Placed',
+    userEmail: shipping.userEmail || payment.userEmail || row.user_email || '',
     createdAt: row.created_at
   };
 }
 
 function orderToRow(o) {
+  const userEmail = o.userEmail || o.shippingDetails?.userEmail || '';
+  const shippingWithUser = {
+    ...(o.shippingDetails || {}),
+    userEmail: userEmail
+  };
   return {
     id: o.id,
-    items: o.items,
-    shipping_details: o.shippingDetails,
-    payment_details: o.paymentDetails,
+    items: o.items || [],
+    shipping_details: shippingWithUser,
+    payment_details: {
+      ...(o.paymentDetails || {}),
+      userEmail: userEmail
+    },
     subtotal: o.subtotal || 0,
     discount: o.discount || 0,
     tax: o.tax || 0,
     shipping: o.shipping || 0,
-    total: o.total,
-    status: o.status
+    total: o.total || 0,
+    status: o.status || 'Placed'
   };
 }
 
